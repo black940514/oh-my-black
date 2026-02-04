@@ -155,10 +155,19 @@ describe('Team Auto-Composer', () => {
     });
 
     it('should recommend appropriate validation type', () => {
-      const simple = createMockTaskAnalysis({ complexity: 0.2 });
-      expect(analyzeRequirements(simple).recommendedValidation).toBe('self-only');
+      // B-V cycle is now default: low complexity uses validator (no security keywords)
+      const simple = createMockTaskAnalysis({
+        complexity: 0.2,
+        areas: ['backend'],  // No security area
+        task: 'Add logging'  // No security keywords
+      });
+      expect(analyzeRequirements(simple).recommendedValidation).toBe('validator');
 
-      const medium = createMockTaskAnalysis({ complexity: 0.5 });
+      const medium = createMockTaskAnalysis({
+        complexity: 0.5,
+        areas: ['backend'],
+        task: 'Implement feature'
+      });
       expect(analyzeRequirements(medium).recommendedValidation).toBe('validator');
 
       const complex = createMockTaskAnalysis({ complexity: 0.8 });

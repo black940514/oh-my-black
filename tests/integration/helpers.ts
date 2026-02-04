@@ -77,12 +77,15 @@ export function createMockDecomposition(taskCount: number = 3): DecompositionRes
     });
   }
 
+  // Build executionOrder based on actual subtask count
+  const executionOrder = subtasks.map(s => [s.id]);
+
   return {
     analysis,
     components,
     subtasks,
     strategy: 'component-based',
-    executionOrder: [[subtasks[0].id], [subtasks[1].id], [subtasks[2].id]],
+    executionOrder,
     warnings: []
   };
 }
@@ -154,18 +157,17 @@ export function createMockTeam(template: 'minimal' | 'standard' | 'robust' = 'st
     }
   ];
 
-  if (template === 'standard' || template === 'robust') {
-    members.push({
-      id: 'validator-1',
-      agentType: 'validator-syntax',
-      role: 'validator',
-      modelTier: 'medium',
-      capabilities: ['code_review'],
-      maxConcurrentTasks: 1,
-      status: 'idle',
-      assignedTasks: []
-    });
-  }
+  // B-V cycle enabled by default: all templates include at least one validator
+  members.push({
+    id: 'validator-1',
+    agentType: 'validator-syntax',
+    role: 'validator',
+    modelTier: 'medium',
+    capabilities: ['code_review'],
+    maxConcurrentTasks: 1,
+    status: 'idle',
+    assignedTasks: []
+  });
 
   if (template === 'robust') {
     members.push({
@@ -185,7 +187,7 @@ export function createMockTeam(template: 'minimal' | 'standard' | 'robust' = 'st
     name: 'Test Team',
     description: 'A test team',
     members,
-    defaultValidationType: template === 'minimal' ? 'self-only' : 'validator',
+    defaultValidationType: 'validator',  // B-V cycle enabled by default for all templates
     config: {
       maxRetries: 3,
       taskTimeout: 300000,

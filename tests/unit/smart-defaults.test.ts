@@ -31,12 +31,12 @@ describe('Smart Defaults', () => {
       expect(result).toBe('validator');
     });
 
-    it('G6: selects "self-only" for 1-2 files without risk keywords', () => {
+    it('G6: selects "validator" for 1-2 files (B-V cycle default)', () => {
       const result = selectValidationType(2, false, false);
-      expect(result).toBe('self-only');
+      expect(result).toBe('validator');  // B-V cycle enabled by default
     });
 
-    it('G7: selects "self-only" for speed keywords regardless of file count', () => {
+    it('G7: selects "self-only" for speed keywords (explicit opt-out)', () => {
       const result = selectValidationType(10, false, true);
       expect(result).toBe('self-only');
     });
@@ -46,9 +46,9 @@ describe('Smart Defaults', () => {
       expect(result).toBe('architect');
     });
 
-    it('G9: selects "self-only" for 1 file', () => {
+    it('G9: selects "validator" for 1 file (B-V cycle default)', () => {
       const result = selectValidationType(1, false, false);
-      expect(result).toBe('self-only');
+      expect(result).toBe('validator');  // B-V cycle enabled by default
     });
 
     it('G10: prioritizes risk keywords over file count', () => {
@@ -209,9 +209,9 @@ describe('Smart Defaults', () => {
       expect(result.enableOhmyblack).toBe(true);
     });
 
-    it('J5: disables ohmyblack for simple tasks', () => {
+    it('J5: enables ohmyblack by default (B-V cycle)', () => {
       const result = autoConfigureDefaults('quick fix', 1);
-      expect(result.enableOhmyblack).toBe(false);
+      expect(result.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
 
     it('J6: selects appropriate team template for fullstack work', () => {
@@ -283,17 +283,17 @@ describe('Smart Defaults', () => {
       expect(result.enableOhmyblack).toBe(true);
     });
 
-    it('K4: calculates low complexity for single file, simple task', () => {
+    it('K4: enables B-V cycle by default for single file task', () => {
       const result = autoConfigureDefaults('add button', 1);
-      expect(result.validationType).toBe('self-only');
-      expect(result.enableOhmyblack).toBe(false);
+      expect(result.validationType).toBe('validator');  // B-V cycle default
+      expect(result.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
   });
 
   describe('L. Edge Cases', () => {
-    it('L1: handles empty user input', () => {
+    it('L1: handles empty user input with B-V default', () => {
       const result = autoConfigureDefaults('', 1);
-      expect(result.validationType).toBe('self-only');
+      expect(result.validationType).toBe('validator');  // B-V cycle default
       expect(result.teamTemplate).toBe('standard');
     });
 

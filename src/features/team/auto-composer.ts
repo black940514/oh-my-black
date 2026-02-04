@@ -1035,13 +1035,12 @@ export function analyzeRequirements(analysis: TaskAnalysis): RequirementsAnalysi
 	if (needsArchitect) estimatedTeamSize++;
 	if (needsDocumentation) estimatedTeamSize++;
 
-	// Determine recommended validation
-	let recommendedValidation: 'self-only' | 'validator' | 'architect' = 'self-only';
+	// Determine recommended validation (B-V cycle enabled by default)
+	let recommendedValidation: 'self-only' | 'validator' | 'architect' = 'validator';
 	if (analysis.complexity >= 0.7 || needsArchitect || needsSecurityReview) {
 		recommendedValidation = 'architect';
-	} else if (analysis.complexity >= 0.3) {
-		recommendedValidation = 'validator';
 	}
+	// Note: 'validator' is now the default for all other cases (B-V cycle)
 
 	return {
 		needsDesigner,

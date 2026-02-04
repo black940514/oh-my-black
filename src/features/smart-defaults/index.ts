@@ -17,10 +17,11 @@ export const ZERO_CONFIG_DEFAULTS = {
   defaultTeamTemplate: 'auto' as const,
   defaultParallelWorkers: 'auto' as const,
 
-  // Ohmyblack (quality gatekeeper) auto-enable thresholds
+  // Ohmyblack (quality gatekeeper) - ENABLED BY DEFAULT
+  // B-V cycle is now the default behavior for quality assurance
   ohmyblackAutoThreshold: {
-    fileCount: 3,              // Enable for 3+ files
-    complexityScore: 0.5,      // Enable for medium+ complexity
+    fileCount: 1,              // Enable for any file modification (default on)
+    complexityScore: 0.0,      // Enable for all complexity levels (default on)
     riskKeywords: [
       'production', 'deploy', 'important', 'critical',
       '중요', '프로덕션', '배포', '위험'

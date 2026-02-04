@@ -8,19 +8,19 @@ import { autoConfigureDefaults } from '../../src/features/smart-defaults/index.j
  */
 describe('Zero Learning Curve Integration', () => {
   describe('J. End-to-End Scenarios', () => {
-    it('J1: Korean novice user - simple feature request', () => {
+    it('J1: Korean novice user - simple feature request (B-V default)', () => {
       const userInput = '로그인 버튼 만들어줘';
 
       // Step 1: Detect intent
       const intent = detectIntent(userInput);
       expect(intent.mode).toBe('autopilot');
-      expect(intent.validationLevel).toBe('self-only');
+      expect(intent.validationLevel).toBe('validator');  // B-V cycle default
 
       // Step 2: Auto-configure defaults
-      const config = autoConfigureDefaults(userInput, intent.validationLevel === 'self-only' ? 1 : 3);
-      expect(config.validationType).toBe('self-only');
+      const config = autoConfigureDefaults(userInput, 1);
+      expect(config.validationType).toBe('validator');  // B-V cycle default
       expect(config.parallelWorkers).toBe(1);
-      expect(config.enableOhmyblack).toBe(false);
+      expect(config.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
 
     it('J2: English novice user - urgent parallel request', () => {
@@ -102,14 +102,14 @@ describe('Zero Learning Curve Integration', () => {
       // Step 1: Detect intent
       const intent = detectIntent(userInput);
       expect(intent.mode).toBe('ultrapilot'); // Speed keyword
-      expect(intent.validationLevel).toBe('self-only'); // Speed = self validation
+      expect(intent.validationLevel).toBe('self-only'); // Speed = explicit opt-out
 
       // Step 2: Auto-configure defaults
       const config = autoConfigureDefaults(userInput, 1, 'bugfix', []);
       expect(config.teamTemplate).toBe('bugfix');
-      expect(config.validationType).toBe('self-only');
+      expect(config.validationType).toBe('self-only');  // Speed keyword = opt-out
       expect(config.parallelWorkers).toBe(1);
-      expect(config.enableOhmyblack).toBe(false);
+      expect(config.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
 
     it('J8: Security-sensitive feature with mixed keywords', () => {
@@ -141,21 +141,21 @@ describe('Zero Learning Curve Integration', () => {
       expect(config.enableOhmyblack).toBe(true);
     });
 
-    it('J10: Simple frontend component with low confidence', () => {
+    it('J10: Simple frontend component with B-V default', () => {
       const userInput = 'I need a button component';
 
       // Step 1: Detect intent
       const intent = detectIntent(userInput);
       // Might not detect strong mode due to low keyword match
       expect(['autopilot', 'none']).toContain(intent.mode);
-      expect(intent.validationLevel).toBe('self-only');
+      expect(intent.validationLevel).toBe('validator');  // B-V cycle default
 
-      // Step 2: Auto-configure defaults - should still provide sensible defaults
+      // Step 2: Auto-configure defaults - B-V enabled by default
       const config = autoConfigureDefaults(userInput, 1, 'frontend component', ['react']);
       expect(config.teamTemplate).toBe('frontend');
-      expect(config.validationType).toBe('self-only');
+      expect(config.validationType).toBe('validator');  // B-V cycle default
       expect(config.parallelWorkers).toBe(1);
-      expect(config.enableOhmyblack).toBe(false);
+      expect(config.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
   });
 
@@ -203,12 +203,12 @@ describe('Zero Learning Curve Integration', () => {
       });
     });
 
-    it('L2: validates that self-only validation is applied for quick tasks', () => {
+    it('L2: validates that self-only validation is applied for speed keywords (opt-out)', () => {
       const inputs = [
-        '빠르게 수정',
-        'quick fix',
-        'simple change',
-        '간단히 추가',
+        '빠르게 수정',     // Contains '빠르게'
+        'quickly fix it', // Contains 'quickly'
+        'simple change',  // Contains 'simple'
+        '간단히 추가',    // Contains '간단히'
       ];
 
       inputs.forEach(input => {
@@ -219,15 +219,15 @@ describe('Zero Learning Curve Integration', () => {
   });
 
   describe('M. Complexity-Based Decision Making', () => {
-    it('M1: suggests appropriate settings for low complexity task', () => {
+    it('M1: suggests B-V settings for low complexity task (default)', () => {
       const userInput = 'add a button';
 
       const intent = detectIntent(userInput);
       const config = autoConfigureDefaults(userInput, 1);
 
-      expect(intent.validationLevel).toBe('self-only');
+      expect(intent.validationLevel).toBe('validator');  // B-V cycle default
       expect(config.parallelWorkers).toBe(1);
-      expect(config.enableOhmyblack).toBe(false);
+      expect(config.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
 
     it('M2: suggests appropriate settings for medium complexity task', () => {
@@ -299,9 +299,11 @@ describe('Zero Learning Curve Integration', () => {
       expect(config.enableOhmyblack).toBe(true);
     });
 
-    it('O4: disables ohmyblack for simple, low-risk tasks', () => {
-      const config = autoConfigureDefaults('add simple button', 1);
-      expect(config.enableOhmyblack).toBe(false);
+    it('O4: enables ohmyblack by default (B-V cycle always on)', () => {
+      // B-V cycle is enabled by default for ALL tasks
+      // Users can opt-out using speed keywords (빠르게, quickly, simple)
+      const config = autoConfigureDefaults('add button', 1);
+      expect(config.enableOhmyblack).toBe(true);  // B-V cycle enabled by default
     });
   });
 

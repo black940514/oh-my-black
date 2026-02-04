@@ -442,14 +442,14 @@ describe('Full Workflow E2E', () => {
         }
       };
 
-      // Phase 3: Minimal team
+      // Phase 3: Minimal team (now includes validator by default for B-V cycle)
       context.report.phasesCompleted.push('team-composition');
       context.team = createMockTeam('minimal');
 
-      expect(context.team.members).toHaveLength(1);
-      expect(context.team.defaultValidationType).toBe('self-only');
+      expect(context.team.members).toHaveLength(2);  // builder + validator (B-V cycle default)
+      expect(context.team.defaultValidationType).toBe('validator');
 
-      // Phase 4: Simple workflow
+      // Phase 4: Simple workflow (using validator for B-V cycle)
       context.report.phasesCompleted.push('workflow-creation');
       context.workflow = {
         workflowId: `workflow-${context.sessionState.sessionId}`,
@@ -463,7 +463,7 @@ describe('Full Workflow E2E', () => {
               taskDescription: 'Fix null pointer in profile update',
               requirements: ['Null check added', 'Tests pass'],
               acceptanceCriteria: ['Unit tests pass'],
-              validationType: 'self-only',
+              validationType: 'validator',  // B-V cycle default
               builderAgent: 'executor',
               maxRetries: 2,
               timeout: 300000,
@@ -479,7 +479,7 @@ describe('Full Workflow E2E', () => {
         config: {
           parallelExecution: false,
           maxParallelTasks: 1,
-          defaultValidationType: 'self-only',
+          defaultValidationType: 'validator',  // B-V cycle default
           autoAssign: true,
           continueOnFailure: false,
           maxRetries: 2,
@@ -495,10 +495,10 @@ describe('Full Workflow E2E', () => {
         }
       };
 
-      // Phase 5: Quick execution
+      // Phase 5: Quick execution with B-V validation
       context.report.phasesCompleted.push('execution');
       const result = await simulateWorkflowBVCycle(context.workflow.tasks[0], {
-        validationType: 'self-only'
+        validationType: 'validator'  // B-V cycle default
       });
 
       context.results.push(result);

@@ -1,12 +1,11 @@
 /**
  * Smart validation type selector based on file count and risk keywords
  *
- * Rules:
+ * Rules (B-V cycle enabled by default):
  * - Risk keywords (production, deploy, critical) → architect
- * - Speed keywords (quick, fast, simple) → self-only
- * - 1-2 files → self-only
- * - 3-6 files → validator
- * - 7+ files → architect
+ * - Speed keywords (quick, fast, simple) → self-only (opt-out)
+ * - 1-6 files → validator (B-V cycle default)
+ * - 7+ files → architect (high complexity)
  */
 export function selectValidationType(
   fileCount: number,
@@ -16,14 +15,12 @@ export function selectValidationType(
   // Risk keywords always → architect
   if (riskKeywords) return 'architect';
 
-  // Speed keywords → self-only
+  // Speed keywords → self-only (explicit opt-out from B-V)
   if (speedKeywords) return 'self-only';
 
-  // File count based:
-  // 1-2 files → self-only
-  // 3-6 files → validator
-  // 7+ files → architect
+  // File count based (B-V enabled by default):
+  // 1-6 files → validator (B-V cycle)
+  // 7+ files → architect (high complexity)
   if (fileCount >= 7) return 'architect';
-  if (fileCount >= 3) return 'validator';
-  return 'self-only';
+  return 'validator';
 }

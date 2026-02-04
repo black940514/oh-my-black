@@ -187,9 +187,12 @@ export function createTeamFromTemplate(
 
   switch (template) {
     case 'minimal':
-      description = 'Minimal team with single builder and self-validation';
-      members.push(createTeamMember('builder-1', 'executor-low', 'builder'));
-      defaultValidationType = 'self-only';
+      description = 'Minimal team with single builder and basic validation';
+      members.push(
+        createTeamMember('builder-1', 'executor-low', 'builder'),
+        createTeamMember('validator-1', 'validator-syntax', 'validator')
+      );
+      defaultValidationType = 'validator';  // B-V cycle enabled by default
       configOverrides.maxParallelTasks = 1;
       break;
 

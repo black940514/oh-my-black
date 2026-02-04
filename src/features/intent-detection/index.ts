@@ -149,18 +149,13 @@ function determineValidationLevel(
     return 'architect';
   }
 
-  // Speed keywords suggest self-validation
+  // Speed keywords suggest self-validation (explicit opt-out from B-V)
   if (detectSpeedKeywords(input)) {
     return 'self-only';
   }
 
-  // Medium complexity gets validator
-  if (complexity >= 0.3) {
-    return 'validator';
-  }
-
-  // Default to self-only for simple tasks
-  return 'self-only';
+  // Default to validator for B-V cycle (enabled by default)
+  return 'validator';
 }
 
 /**
