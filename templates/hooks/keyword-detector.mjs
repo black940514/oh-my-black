@@ -88,6 +88,90 @@ function sanitizeForKeywordDetection(text) {
     .replace(/`[^`]+`/g, '');
 }
 
+/**
+ * Check if the text is asking a question ABOUT a specific keyword/mode,
+ * rather than requesting to ACTIVATE that mode.
+ *
+ * Examples that should be EXCLUDED (questions):
+ * - "autopilot이란?" "autopilot 모드는 어떻게 동작하는거야?"
+ * - "what is autopilot?" "how does autopilot work?"
+ * - "explain ralph mode" "tell me about ultrawork"
+ *
+ * Examples that should be INCLUDED (commands):
+ * - "autopilot: build me an app"
+ * - "autopilot 시작"
+ * - "ralph: fix all bugs"
+ */
+function isQuestionAboutKeyword(text, keyword) {
+  const lowerText = text.toLowerCase();
+  const lowerKeyword = keyword.toLowerCase();
+
+  // Explicit command patterns always trigger (not questions)
+  const explicitPatterns = {
+    autopilot: [/^autopilot\s*:/i, /autopilot\s+시작/i, /autopilot\s+start/i, /\/autopilot\b/i],
+    ralph: [/^ralph\s*:/i, /ralph\s+시작/i, /\/ralph\b/i],
+    ultrawork: [/^ulw\s*:/i, /^ultrawork\s*:/i, /\/ultrawork\b/i, /\/ulw\b/i],
+    ultrapilot: [/^ultrapilot\s*:/i, /\/ultrapilot\b/i],
+  };
+
+  const patterns = explicitPatterns[lowerKeyword];
+  if (patterns) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) {
+        return false; // Explicit command, not a question
+      }
+    }
+  }
+
+  // Korean question patterns
+  const koreanPatterns = [
+    new RegExp(`${lowerKeyword}\\s*(이란|란)\\s*(\\?|뭐|무엇|$)`, 'i'),
+    new RegExp(`${lowerKeyword}\\s*(모드|기능)?\\s*(는|은)?\\s*(어떻게|뭐|무엇)`, 'i'),
+    new RegExp(`${lowerKeyword}\\s*(을|를)?\\s*(설명|알려)`, 'i'),
+    new RegExp(`${lowerKeyword}(의|에\\s*대한?)\\s*(사용법|동작|작동|기능)`, 'i'),
+  ];
+
+  for (const pattern of koreanPatterns) {
+    if (pattern.test(lowerText)) {
+      return true;
+    }
+  }
+
+  // English question patterns
+  const englishPatterns = [
+    new RegExp(`what\\s+(is|are|does)\\s+${lowerKeyword}`, 'i'),
+    new RegExp(`how\\s+(does|do|is|are)\\s+${lowerKeyword}`, 'i'),
+    new RegExp(`(explain|describe)\\s+${lowerKeyword}`, 'i'),
+    new RegExp(`tell\\s+me\\s+about\\s+${lowerKeyword}`, 'i'),
+    new RegExp(`${lowerKeyword}\\s+(documentation|help|docs)`, 'i'),
+  ];
+
+  for (const pattern of englishPatterns) {
+    if (pattern.test(lowerText)) {
+      return true;
+    }
+  }
+
+  // Check if text ends with ? and keyword is the subject
+  if (/\?\s*$/.test(text)) {
+    const keywordIndex = lowerText.indexOf(lowerKeyword);
+    if (keywordIndex !== -1) {
+      const beforeKeyword = lowerText.slice(Math.max(0, keywordIndex - 30), keywordIndex);
+      const afterKeyword = lowerText.slice(keywordIndex, Math.min(lowerText.length, keywordIndex + lowerKeyword.length + 30));
+
+      const questionContext = ['뭐', '무엇', '어떻게', '이란', '란', 'what', 'how', 'explain', 'describe'];
+      if (questionContext.some(q => beforeKeyword.includes(q) || afterKeyword.includes(q))) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// Mode keywords that should be checked for question patterns
+const MODE_KEYWORDS = ['autopilot', 'ralph', 'ultrawork', 'ulw', 'ultrapilot', 'ecomode', 'eco', 'swarm', 'pipeline', 'ralplan', 'plan', 'tdd', 'research', 'ultrathink', 'deepsearch', 'analyze'];
+
 // Create state file for a mode
 function activateState(directory, prompt, stateName, sessionId) {
   const state = {
@@ -239,99 +323,131 @@ async function main() {
     // Collect all matching keywords
     const matches = [];
 
-    // Cancel keywords
+    // Cancel keywords (no question check needed - cancel is always intentional)
     if (/\b(cancelomc|stopomc)\b/i.test(cleanPrompt)) {
       matches.push({ name: 'cancel', args: '' });
     }
 
     // Ralph keywords
     if (/\b(ralph|don't stop|must complete|until done)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'ralph', args: '' });
+      // Check if asking about ralph
+      if (!isQuestionAboutKeyword(prompt, 'ralph')) {
+        matches.push({ name: 'ralph', args: '' });
+      }
     }
 
     // Autopilot keywords
-    if (/\b(autopilot|auto pilot|auto-pilot|autonomous|full auto|fullsend)\b/i.test(cleanPrompt) ||
-        /\bbuild\s+me\s+/i.test(cleanPrompt) ||
+    const hasAutopilotKeyword = /\b(autopilot|auto pilot|auto-pilot|autonomous|full auto|fullsend)\b/i.test(cleanPrompt);
+    const hasAutopilotPhrase = /\bbuild\s+me\s+/i.test(cleanPrompt) ||
         /\bcreate\s+me\s+/i.test(cleanPrompt) ||
         /\bmake\s+me\s+/i.test(cleanPrompt) ||
         /\bi\s+want\s+a\s+/i.test(cleanPrompt) ||
         /\bi\s+want\s+an\s+/i.test(cleanPrompt) ||
         /\bhandle\s+it\s+all\b/i.test(cleanPrompt) ||
         /\bend\s+to\s+end\b/i.test(cleanPrompt) ||
-        /\be2e\s+this\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'autopilot', args: '' });
+        /\be2e\s+this\b/i.test(cleanPrompt);
+
+    if (hasAutopilotKeyword || hasAutopilotPhrase) {
+      // Only check for question if keyword was detected (phrases are always action)
+      if (!hasAutopilotKeyword || !isQuestionAboutKeyword(prompt, 'autopilot')) {
+        matches.push({ name: 'autopilot', args: '' });
+      }
     }
 
     // Ultrapilot keywords
     if (/\b(ultrapilot|ultra-pilot)\b/i.test(cleanPrompt) ||
         /\bparallel\s+build\b/i.test(cleanPrompt) ||
         /\bswarm\s+build\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'ultrapilot', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'ultrapilot')) {
+        matches.push({ name: 'ultrapilot', args: '' });
+      }
     }
 
     // Ultrawork keywords
     if (/\b(ultrawork|ulw|uw)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'ultrawork', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'ultrawork')) {
+        matches.push({ name: 'ultrawork', args: '' });
+      }
     }
 
     // Ecomode keywords
     if (/\b(eco|ecomode|eco-mode|efficient|save-tokens|budget)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'ecomode', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'ecomode')) {
+        matches.push({ name: 'ecomode', args: '' });
+      }
     }
 
     // Swarm - parse N from "swarm N agents"
     const swarmMatch = cleanPrompt.match(/\bswarm\s+(\d+)\s+agents?\b/i);
     if (swarmMatch || /\bcoordinated\s+agents\b/i.test(cleanPrompt)) {
-      const agentCount = swarmMatch ? swarmMatch[1] : '3';
-      matches.push({ name: 'swarm', args: agentCount });
+      if (!isQuestionAboutKeyword(prompt, 'swarm')) {
+        const agentCount = swarmMatch ? swarmMatch[1] : '3';
+        matches.push({ name: 'swarm', args: agentCount });
+      }
     }
 
     // Pipeline keywords
     if (/\b(pipeline)\b/i.test(cleanPrompt) || /\bchain\s+agents\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'pipeline', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'pipeline')) {
+        matches.push({ name: 'pipeline', args: '' });
+      }
     }
 
     // Ralplan keyword
     if (/\b(ralplan)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'ralplan', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'ralplan')) {
+        matches.push({ name: 'ralplan', args: '' });
+      }
     }
 
-    // Plan keywords
+    // Plan keywords (only "plan this" or "plan the" - not questions about "plan")
     if (/\b(plan this|plan the)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'plan', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'plan')) {
+        matches.push({ name: 'plan', args: '' });
+      }
     }
 
     // TDD keywords
     if (/\b(tdd)\b/i.test(cleanPrompt) ||
         /\btest\s+first\b/i.test(cleanPrompt) ||
         /\bred\s+green\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'tdd', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'tdd')) {
+        matches.push({ name: 'tdd', args: '' });
+      }
     }
 
     // Research keywords
     if (/\b(research)\b/i.test(cleanPrompt) ||
         /\banalyze\s+data\b/i.test(cleanPrompt) ||
         /\bstatistics\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'research', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'research')) {
+        matches.push({ name: 'research', args: '' });
+      }
     }
 
     // Ultrathink keywords
     if (/\b(ultrathink|think hard|think deeply)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'ultrathink', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'ultrathink')) {
+        matches.push({ name: 'ultrathink', args: '' });
+      }
     }
 
     // Deepsearch keywords
     if (/\b(deepsearch)\b/i.test(cleanPrompt) ||
         /\bsearch\s+(the\s+)?(codebase|code|files?|project)\b/i.test(cleanPrompt) ||
         /\bfind\s+(in\s+)?(codebase|code|all\s+files?)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'deepsearch', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'deepsearch')) {
+        matches.push({ name: 'deepsearch', args: '' });
+      }
     }
 
     // Analyze keywords
     if (/\b(deep\s*analyze)\b/i.test(cleanPrompt) ||
         /\binvestigate\s+(the|this|why)\b/i.test(cleanPrompt) ||
         /\bdebug\s+(the|this|why)\b/i.test(cleanPrompt)) {
-      matches.push({ name: 'analyze', args: '' });
+      if (!isQuestionAboutKeyword(prompt, 'analyze')) {
+        matches.push({ name: 'analyze', args: '' });
+      }
     }
 
     // No matches - pass through
