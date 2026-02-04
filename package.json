@@ -1,6 +1,6 @@
 {
   "name": "oh-my-black",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered multi-agent orchestration system with Zero Learning Curve - Just speak naturally",
   "type": "module",
   "main": "dist/index.js",
