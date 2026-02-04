@@ -1,0 +1,81 @@
+{
+  "id": "team-auth-feature",
+  "name": "Authentication Feature Team",
+  "description": "Team assembled for implementing authentication system",
+  "template": "robust",
+  "defaultValidationType": "validator",
+  "members": [
+    {
+      "id": "builder-1",
+      "agentType": "executor",
+      "role": "builder",
+      "modelTier": "high",
+      "capabilities": ["code_modification", "database", "security"],
+      "maxConcurrentTasks": 2,
+      "status": "idle",
+      "assignedTasks": []
+    },
+    {
+      "id": "builder-2",
+      "agentType": "executor",
+      "role": "builder",
+      "modelTier": "medium",
+      "capabilities": ["code_modification", "testing"],
+      "maxConcurrentTasks": 2,
+      "status": "idle",
+      "assignedTasks": []
+    },
+    {
+      "id": "validator-syntax",
+      "agentType": "validator-syntax",
+      "role": "validator",
+      "modelTier": "medium",
+      "capabilities": ["code_review", "syntax_check"],
+      "maxConcurrentTasks": 3,
+      "status": "idle",
+      "assignedTasks": []
+    },
+    {
+      "id": "validator-logic",
+      "agentType": "validator-logic",
+      "role": "validator",
+      "modelTier": "medium",
+      "capabilities": ["code_review", "logic_validation"],
+      "maxConcurrentTasks": 2,
+      "status": "idle",
+      "assignedTasks": []
+    },
+    {
+      "id": "security-reviewer",
+      "agentType": "security-reviewer",
+      "role": "validator",
+      "modelTier": "high",
+      "capabilities": ["security_review", "vulnerability_scan"],
+      "maxConcurrentTasks": 1,
+      "status": "idle",
+      "assignedTasks": []
+    },
+    {
+      "id": "architect",
+      "agentType": "architect",
+      "role": "specialist",
+      "modelTier": "high",
+      "capabilities": ["architecture_review", "design_validation"],
+      "maxConcurrentTasks": 1,
+      "status": "idle",
+      "assignedTasks": []
+    }
+  ],
+  "config": {
+    "maxRetries": 3,
+    "taskTimeout": 300000,
+    "parallelExecution": true,
+    "maxParallelTasks": 3,
+    "escalationPolicy": {
+      "coordinatorThreshold": 2,
+      "architectThreshold": 3,
+      "humanThreshold": 5,
+      "autoEscalateOnSecurity": true
+    }
+  }
+}

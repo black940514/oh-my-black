@@ -1,0 +1,19 @@
+{
+  "aliases": {
+    "omc": {
+      "repo": "black940514/oh-my-black",
+      "local": "~/Workspace/oh-my-black",
+      "default_base": "main"
+    },
+    "cc": {
+      "repo": "anthropics/claude-code",
+      "local": "~/Workspace/claude-code",
+      "default_base": "main"
+    }
+  },
+  "defaults": {
+    "worktree_root": "~/.psm/worktrees",
+    "cleanup_after_days": 14,
+    "auto_cleanup_merged": true
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "analysis": {
+    "task": "Implement user authentication system",
+    "type": "feature",
+    "complexity": 0.6,
+    "areas": ["backend", "security", "database"],
+    "technologies": ["typescript", "express", "postgresql", "jwt", "bcrypt"],
+    "estimatedComponents": 4,
+    "isParallelizable": true
+  },
+  "components": [
+    {
+      "id": "comp-1",
+      "name": "Database Schema",
+      "role": "backend",
+      "description": "User table and related schema",
+      "canParallelize": false,
+      "dependencies": [],
+      "effort": "low"
+    },
+    {
+      "id": "comp-2",
+      "name": "Authentication Service",
+      "role": "backend",
+      "description": "Core auth logic (register, login, password reset)",
+      "canParallelize": false,
+      "dependencies": ["comp-1"],
+      "effort": "high"
+    },
+    {
+      "id": "comp-3",
+      "name": "JWT Middleware",
+      "role": "backend",
+      "description": "Token generation and validation middleware",
+      "canParallelize": false,
+      "dependencies": ["comp-2"],
+      "effort": "medium"
+    },
+    {
+      "id": "comp-4",
+      "name": "Email Service Integration",
+      "role": "backend",
+      "description": "Email verification and password reset emails",
+      "canParallelize": true,
+      "dependencies": ["comp-1"],
+      "effort": "medium"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "task-1",
+      "name": "Create user database schema",
+      "component": "comp-1",
+      "prompt": "Create PostgreSQL schema for users table with email, password_hash, verified, created_at fields. Include migration scripts.",
+      "agentType": "executor",
+      "modelTier": "low",
+      "acceptanceCriteria": [
+        "Migration creates users table",
+        "All required fields present",
+        "Indexes on email column",
+        "Migration is reversible"
+      ],
+      "verification": "Run migration up and down successfully",
+      "blockedBy": [],
+      "validation": {
+        "validationType": "validator",
+        "validatorAgent": "validator-syntax",
+        "maxRetries": 2
+      },
+      "ownership": {
+        "patterns": ["**/migrations/**", "**/schema/users.sql"],
+        "files": []
+      }
+    },
+    {
+      "id": "task-2",
+      "name": "Implement authentication service",
+      "component": "comp-2",
+      "prompt": "Create AuthService with register(), login(), and resetPassword() methods. Use bcrypt for password hashing. Generate JWT tokens on successful login.",
+      "agentType": "executor",
+      "modelTier": "high",
+      "acceptanceCriteria": [
+        "Register creates user with hashed password",
+        "Login validates credentials and returns JWT",
+        "Password reset generates secure token",
+        "All methods have error handling",
+        "Unit tests pass"
+      ],
+      "verification": "npm test -- auth.service.test.ts",
+      "blockedBy": ["task-1"],
+      "validation": {
+        "validationType": "architect",
+        "validatorAgent": "security-reviewer",
+        "maxRetries": 3
+      },
+      "ownership": {
+        "patterns": ["**/services/auth.service.ts", "**/services/auth.service.test.ts"],
+        "files": []
+      }
+    },
+    {
+      "id": "task-3",
+      "name": "Create JWT middleware",
+      "component": "comp-3",
+      "prompt": "Create Express middleware to validate JWT tokens. Extract user from token and attach to request object. Handle expired/invalid tokens appropriately.",
+      "agentType": "executor",
+      "modelTier": "medium",
+      "acceptanceCriteria": [
+        "Middleware validates JWT tokens",
+        "User attached to request on success",
+        "401 error on invalid token",
+        "403 error on expired token",
+        "Integration tests pass"
+      ],
+      "verification": "npm test -- auth.middleware.test.ts",
+      "blockedBy": ["task-2"],
+      "validation": {
+        "validationType": "validator",
+        "validatorAgent": "validator-logic",
+        "maxRetries": 3
+      },
+      "ownership": {
+        "patterns": ["**/middleware/auth.middleware.ts", "**/middleware/auth.middleware.test.ts"],
+        "files": []
+      }
+    },
+    {
+      "id": "task-4",
+      "name": "Implement email service",
+      "component": "comp-4",
+      "prompt": "Create EmailService to send verification and password reset emails. Use template system for email content. Integrate with email provider (Sendgrid/AWS SES).",
+      "agentType": "executor",
+      "modelTier": "medium",
+      "acceptanceCriteria": [
+        "Email service sends verification emails",
+        "Email service sends password reset emails",
+        "Templates are properly formatted",
+        "Service handles failures gracefully",
+        "Unit tests pass"
+      ],
+      "verification": "npm test -- email.service.test.ts",
+      "blockedBy": ["task-1"],
+      "validation": {
+        "validationType": "validator",
+        "validatorAgent": "validator-logic",
+        "maxRetries": 3
+      },
+      "ownership": {
+        "patterns": ["**/services/email.service.ts", "**/templates/email/**"],
+        "files": []
+      }
+    }
+  ],
+  "strategy": "component-based",
+  "executionOrder": [
+    ["task-1"],
+    ["task-2", "task-4"],
+    ["task-3"]
+  ],
+  "warnings": [
+    "Task 2 involves security-critical password hashing - requires architect validation"
+  ]
+}

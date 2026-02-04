@@ -1,0 +1,20 @@
+{
+  "task": "Implement user authentication system",
+  "complexity": 0.6,
+  "type": "feature",
+  "description": "Create a complete authentication system with login, registration, and password reset functionality",
+  "requirements": [
+    "User can register with email and password",
+    "User can login with credentials",
+    "User can reset password via email",
+    "JWT tokens for session management",
+    "Password hashing with bcrypt",
+    "Email verification for new accounts"
+  ],
+  "areas": ["backend", "security", "database"],
+  "technologies": ["typescript", "express", "postgresql", "jwt", "bcrypt"],
+  "estimatedComponents": 4,
+  "estimatedDuration": "4-6 hours",
+  "parallelizable": true,
+  "securityCritical": true
+}
