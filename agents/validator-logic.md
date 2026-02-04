@@ -73,21 +73,51 @@ Your response MUST end with this JSON block:
 
 ## Verification Commands
 
-### Test Execution
+### Test Execution by Framework
+
+**Jest (JavaScript/TypeScript):**
 ```bash
 # Run all tests
 npm test
-npm run test:unit
-pytest
-cargo test
+npx jest
 
 # Run specific test file
-npm test -- path/to/test.test.ts
-pytest tests/test_auth.py
+npx jest path/to/test.test.ts
 
-# Run with coverage
-npm test -- --coverage
+# Run tests matching pattern
+npx jest --testNamePattern="should login"
+
+# With coverage
+npx jest --coverage
+```
+
+**Vitest (Vite projects):**
+```bash
+npm run test
+npx vitest run
+npx vitest run path/to/test.test.ts
+```
+
+**Pytest (Python):**
+```bash
+pytest
+pytest tests/test_auth.py
+pytest -k "test_login"
 pytest --cov=src tests/
+```
+
+**Go:**
+```bash
+go test ./...
+go test -v ./path/to/package
+go test -cover ./...
+```
+
+**Rust:**
+```bash
+cargo test
+cargo test test_name
+cargo test -- --nocapture
 ```
 
 ### Behavior Validation

@@ -26,6 +26,14 @@ export { deepExecutorAgent } from './deep-executor.js';
 export { qaTesterAgent } from './qa-tester.js';
 export { scientistAgent } from './scientist.js';
 
+// Validator and Coordinator agents (ohmyblack B-V system)
+export { validatorSyntaxAgent, VALIDATOR_SYNTAX_PROMPT_METADATA } from './validator-syntax.js';
+export { validatorLogicAgent, VALIDATOR_LOGIC_PROMPT_METADATA } from './validator-logic.js';
+export { validatorSecurityAgent, VALIDATOR_SECURITY_PROMPT_METADATA } from './validator-security.js';
+export { validatorIntegrationAgent, VALIDATOR_INTEGRATION_PROMPT_METADATA } from './validator-integration.js';
+export { coordinatorAgent, COORDINATOR_PROMPT_METADATA, createCoordinatorState, recordCycleAttempt } from './coordinator.js';
+export type { CoordinatorState, CycleAttempt } from './coordinator.js';
+
 // Import base agents for use in getAgentDefinitions
 import { architectAgent } from './architect.js';
 import { researcherAgent } from './researcher.js';
@@ -40,6 +48,13 @@ import { plannerAgent } from './planner.js';
 import { deepExecutorAgent } from './deep-executor.js';
 import { qaTesterAgent } from './qa-tester.js';
 import { scientistAgent } from './scientist.js';
+
+// Import validator and coordinator agents for getAgentDefinitions
+import { validatorSyntaxAgent } from './validator-syntax.js';
+import { validatorLogicAgent } from './validator-logic.js';
+import { validatorSecurityAgent } from './validator-security.js';
+import { validatorIntegrationAgent } from './validator-integration.js';
+import { coordinatorAgent } from './coordinator.js';
 
 // Re-export loadAgentPrompt (also exported from index.ts)
 export { loadAgentPrompt };
@@ -382,7 +397,13 @@ export function getAgentDefinitions(overrides?: Partial<Record<string, Partial<A
     'tdd-guide-low': tddGuideLowAgent,
     'code-reviewer': codeReviewerAgent,
     'code-reviewer-low': codeReviewerLowAgent,
-    'git-master': gitMasterAgent
+    'git-master': gitMasterAgent,
+    // Validator and Coordinator agents (ohmyblack B-V system)
+    'validator-syntax': validatorSyntaxAgent,
+    'validator-logic': validatorLogicAgent,
+    'validator-security': validatorSecurityAgent,
+    'validator-integration': validatorIntegrationAgent,
+    'coordinator': coordinatorAgent
   };
 
   const result: Record<string, { description: string; prompt: string; tools: string[]; model?: ModelType; defaultModel?: ModelType }> = {};

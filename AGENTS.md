@@ -570,7 +570,7 @@ OMB_TEMPLATE_ENGINE=disabled      # Meta-prompt templates
 
 | Template | Complexity | Members | Validation |
 |----------|-----------|---------|------------|
-| **minimal** | < 0.3 | `executor-low` | self-only |
+| **minimal** | < 0.3 | `executor-low` + `validator-syntax` | validator |
 | **standard** | < 0.5 | `executor`, `validator-syntax` | validator |
 | **robust** | < 0.7 | `executor`, `validator-syntax`, `validator-logic` | validator |
 | **secure** | < 0.9 | `executor-high`, `architect`, `validator-security`, `validator-logic` | architect |

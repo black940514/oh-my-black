@@ -104,7 +104,56 @@ semgrep --config=auto src/
 bandit -r src/
 ```
 
-### Pattern Detection
+### AST-Based Pattern Detection (PREFERRED)
+
+You have access to `ast_grep_search` for structural code pattern matching. **This is more accurate than regex.**
+
+```
+Use: mcp__plugin_oh-my-claudecode_t__ast_grep_search
+Parameters:
+  - pattern: AST pattern with meta-variables ($VAR, $$$VARS)
+  - language: "typescript" | "javascript" | "python" | etc.
+  - path: directory to search (optional)
+```
+
+#### Security Pattern Examples
+
+**Hardcoded Secrets:**
+```
+pattern: "const $VAR = \"sk-$$$REST\""
+language: "typescript"
+→ Finds hardcoded API keys starting with "sk-"
+```
+
+**SQL Injection:**
+```
+pattern: "$DB.query($STR + $VAR)"
+language: "typescript"
+→ Finds string concatenation in SQL queries
+```
+
+**Dangerous eval:**
+```
+pattern: "eval($INPUT)"
+language: "javascript"
+→ Finds eval calls with dynamic input
+```
+
+**Unsafe innerHTML:**
+```
+pattern: "$EL.innerHTML = $VAR"
+language: "typescript"
+→ Finds direct innerHTML assignments (XSS risk)
+```
+
+**Command Injection:**
+```
+pattern: "exec($CMD)"
+language: "typescript"
+→ Finds exec calls that may have user input
+```
+
+### Regex Pattern Detection (Fallback)
 ```bash
 # Search for secrets
 grep -r "api[_-]key\s*=\s*['\"]" src/

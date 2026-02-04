@@ -160,10 +160,21 @@ export {
   ANALYST_PROMPT_METADATA,
   plannerAgent,
   PLANNER_PROMPT_METADATA,
-  // Deprecated (backward compat - will be removed in v4.0.0)
+  // Coordinator and Validators (ohmyblack B-V system)
   coordinatorAgent,
-  ORCHESTRATOR_SISYPHUS_PROMPT_METADATA
+  COORDINATOR_PROMPT_METADATA,
+  validatorSyntaxAgent,
+  VALIDATOR_SYNTAX_PROMPT_METADATA,
+  validatorLogicAgent,
+  VALIDATOR_LOGIC_PROMPT_METADATA,
+  validatorSecurityAgent,
+  VALIDATOR_SECURITY_PROMPT_METADATA,
+  validatorIntegrationAgent,
+  VALIDATOR_INTEGRATION_PROMPT_METADATA,
+  createCoordinatorState,
+  recordCycleAttempt
 } from './agents/index.js';
+export type { CoordinatorState, CycleAttempt } from './agents/index.js';
 
 // Command expansion utilities for SDK integration
 export {

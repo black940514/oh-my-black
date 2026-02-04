@@ -66,14 +66,25 @@ export {
   gitMasterAgent
 } from './definitions.js';
 
+// Validator and Coordinator agents (ohmyblack B-V system)
+export {
+  validatorSyntaxAgent,
+  VALIDATOR_SYNTAX_PROMPT_METADATA,
+  validatorLogicAgent,
+  VALIDATOR_LOGIC_PROMPT_METADATA,
+  validatorSecurityAgent,
+  VALIDATOR_SECURITY_PROMPT_METADATA,
+  validatorIntegrationAgent,
+  VALIDATOR_INTEGRATION_PROMPT_METADATA,
+  coordinatorAgent,
+  COORDINATOR_PROMPT_METADATA,
+  createCoordinatorState,
+  recordCycleAttempt
+} from './definitions.js';
+export type { CoordinatorState, CycleAttempt } from './definitions.js';
+
 // Core exports (getAgentDefinitions and omcSystemPrompt)
 export {
   getAgentDefinitions,
   omcSystemPrompt
 } from './definitions.js';
-
-// Deprecated exports (for backward compatibility)
-export {
-  coordinatorAgent,
-  ORCHESTRATOR_SISYPHUS_PROMPT_METADATA
-} from './coordinator-deprecated.js';

@@ -101,7 +101,7 @@ Create or update `.omb-config.json` to enable ohmyblack features globally:
   "defaultExecutionMode": "ultrawork",
   "ohmyblack": {
     "enabled": true,
-    "defaultValidationLevel": "self-only",
+    "defaultValidationLevel": "validator",
     "autoTeamComposition": true,
     "metaPromptTemplates": "enabled"
   }
@@ -112,10 +112,10 @@ Create or update `.omb-config.json` to enable ohmyblack features globally:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `ohmyblack.enabled` | boolean | false | Globally enable ohmyblack features |
-| `ohmyblack.defaultValidationLevel` | "self-only" \| "validator" \| "architect" | "self-only" | Default validation rigor |
+| `ohmyblack.enabled` | boolean | **true** | Globally enable ohmyblack features (B-V cycle) |
+| `ohmyblack.defaultValidationLevel` | "self-only" \| "validator" \| "architect" | **"validator"** | Default validation rigor |
 | `ohmyblack.autoTeamComposition` | boolean | true | Auto-select team by complexity |
-| `ohmyblack.metaPromptTemplates` | "enabled" \| "disabled" | "disabled" | Use template-based prompts |
+| `ohmyblack.metaPromptTemplates` | "enabled" \| "disabled" | **"enabled"** | Use template-based prompts |
 
 ### Step 3: Understand Validation Levels
 

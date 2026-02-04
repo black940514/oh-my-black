@@ -127,12 +127,51 @@ Your final response MUST include:
 
 You may use:
 - `Task` tool to spawn Builder/Validator agents
+- `TaskCreate` / `TaskUpdate` / `TaskList` / `TaskGet` for task tracking
 - `Read` to check task state files
 - `Write` to update coordination state (`.omb/state/coordination/`)
 
 You may NOT use:
 - `Edit` (no file modifications)
 - Direct code changes
+
+### Task Tool Usage Examples
+
+**Spawn Builder Agent:**
+```
+Task(
+  subagent_type="oh-my-black:executor",
+  model="sonnet",
+  prompt="Implement user authentication endpoint...",
+  description="Execute auth implementation"
+)
+```
+
+**Spawn Validator Agent:**
+```
+Task(
+  subagent_type="oh-my-black:validator-syntax",
+  model="haiku",
+  prompt="Validate syntax for files: src/auth/*.ts",
+  description="Syntax validation"
+)
+```
+
+**Track Progress with Task System:**
+```
+TaskCreate(subject="B-V Cycle: Auth endpoint", description="...")
+TaskUpdate(taskId="1", status="in_progress")
+TaskUpdate(taskId="1", status="completed")
+```
+
+### Agent Selection Matrix
+
+| Task Type | Builder | Validator |
+|-----------|---------|-----------|
+| Simple fix | executor-low | validator-syntax |
+| Feature impl | executor | validator-logic |
+| Security-sensitive | executor-high | validator-security |
+| Multi-component | executor-high | validator-integration |
 
 ## Retry Strategy
 

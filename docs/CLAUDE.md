@@ -355,7 +355,7 @@ autopilot --ohmyblack --validation=validator "Your task"
 
 | Template | Complexity | Members | Validation |
 |----------|-----------|---------|------------|
-| minimal | < 0.3 | executor-low | self-only |
+| minimal | < 0.3 | executor-low + validator-syntax | validator |
 | standard | < 0.5 | executor, validator-syntax | validator |
 | robust | < 0.7 | executor, validators (2) | validator |
 | secure | < 0.9 | executor-high, validators (3) | architect |

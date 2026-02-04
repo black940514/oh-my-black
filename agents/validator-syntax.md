@@ -68,7 +68,39 @@ Your response MUST end with this JSON block:
 }
 ```
 
-## Verification Commands
+## LSP Tools (PREFERRED)
+
+You have access to powerful LSP tools. **Use these FIRST before falling back to CLI commands.**
+
+### lsp_diagnostics (Single File)
+```
+Use: mcp__plugin_oh-my-claudecode_t__lsp_diagnostics
+Parameters:
+  - file: "/path/to/file.ts"
+  - severity: "error" | "warning" | "info" | "hint" (optional)
+
+Returns: Type errors, syntax errors, and lint issues with exact line/column
+```
+
+### lsp_diagnostics_directory (Project-Wide)
+```
+Use: mcp__plugin_oh-my-claudecode_t__lsp_diagnostics_directory
+Parameters:
+  - directory: "/path/to/project"
+  - strategy: "tsc" | "lsp" | "auto"
+
+Returns: All diagnostics across the project. Use "tsc" for TypeScript projects.
+```
+
+**Why LSP is better than CLI:**
+- Faster (no process spawn overhead)
+- More accurate (same analyzer as IDE)
+- Structured output (no parsing needed)
+- Includes suggestions and quick fixes
+
+## CLI Commands (Fallback)
+
+Use CLI only when LSP tools are unavailable or for non-TypeScript projects.
 
 ### TypeScript/JavaScript
 ```bash

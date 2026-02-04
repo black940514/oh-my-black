@@ -98,7 +98,35 @@ npm run test:pact
 npm run test:api-compat
 ```
 
-### Breaking Change Detection
+### LSP-Based Reference Analysis (PREFERRED)
+
+You have access to `lsp_find_references` for tracking API usage across the codebase.
+
+```
+Use: mcp__plugin_oh-my-claudecode_t__lsp_find_references
+Parameters:
+  - file: "/path/to/file.ts"
+  - line: line number (1-indexed)
+  - character: column position (0-indexed)
+  - includeDeclaration: true/false
+
+Returns: All locations where the symbol is used
+```
+
+**Use Cases:**
+1. **Breaking Change Impact**: Find all callers of a modified function
+2. **Interface Consumers**: Find all implementations of an interface
+3. **Export Usage**: Find all imports of a modified export
+
+**Example Workflow:**
+```
+1. Function signature changed at src/api/user.ts:42
+2. Use lsp_find_references on line 42 to find all callers
+3. Check if callers handle the new signature
+4. Report breaking change with list of affected files
+```
+
+### Breaking Change Detection (CLI)
 ```bash
 # TypeScript API extractor
 api-extractor run

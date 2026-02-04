@@ -322,7 +322,7 @@ async function main() {
         console.log(
           JSON.stringify({
             decision: "block",
-            reason: `[RALPH LOOP - ITERATION ${iteration + 1}/${maxIter}] Work is NOT done. Continue working.\nWhen FULLY complete (after Architect verification), run /oh-my-claudecode:cancel to cleanly exit ralph mode and clean up all state files. If cancel fails, retry with /oh-my-claudecode:cancel --force.\n${ralph.state.prompt ? `Task: ${ralph.state.prompt}` : ""}`,
+            reason: `[RALPH LOOP - ITERATION ${iteration + 1}/${maxIter}] Work is NOT done. Continue working.\nWhen FULLY complete (after Architect verification), run /oh-my-black:cancel to cleanly exit ralph mode and clean up all state files. If cancel fails, retry with /oh-my-black:cancel --force.\n${ralph.state.prompt ? `Task: ${ralph.state.prompt}` : ""}`,
           }),
         );
         return;
@@ -342,7 +342,7 @@ async function main() {
           console.log(
             JSON.stringify({
               decision: "block",
-              reason: `[AUTOPILOT - Phase: ${phase}] Autopilot not complete. Continue working. When all phases are complete, run /oh-my-claudecode:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force.`,
+              reason: `[AUTOPILOT - Phase: ${phase}] Autopilot not complete. Continue working. When all phases are complete, run /oh-my-black:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force.`,
             }),
           );
           return;
@@ -366,7 +366,7 @@ async function main() {
           console.log(
             JSON.stringify({
               decision: "block",
-              reason: `[ULTRAPILOT] ${incomplete} workers still running. Continue working. When all workers complete, run /oh-my-claudecode:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force.`,
+              reason: `[ULTRAPILOT] ${incomplete} workers still running. Continue working. When all workers complete, run /oh-my-black:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force.`,
             }),
           );
           return;
@@ -388,7 +388,7 @@ async function main() {
           console.log(
             JSON.stringify({
               decision: "block",
-              reason: `[SWARM ACTIVE] ${pending} tasks remain. Continue working. When all tasks are done, run /oh-my-claudecode:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force.`,
+              reason: `[SWARM ACTIVE] ${pending} tasks remain. Continue working. When all tasks are done, run /oh-my-black:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force.`,
             }),
           );
           return;
@@ -410,7 +410,7 @@ async function main() {
           console.log(
             JSON.stringify({
               decision: "block",
-              reason: `[PIPELINE - Stage ${currentStage + 1}/${totalStages}] Pipeline not complete. Continue working. When all stages complete, run /oh-my-claudecode:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force.`,
+              reason: `[PIPELINE - Stage ${currentStage + 1}/${totalStages}] Pipeline not complete. Continue working. When all stages complete, run /oh-my-black:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force.`,
             }),
           );
           return;
@@ -430,7 +430,7 @@ async function main() {
         console.log(
           JSON.stringify({
             decision: "block",
-            reason: `[ULTRAQA - Cycle ${cycle + 1}/${maxCycles}] Tests not all passing. Continue fixing. When all tests pass, run /oh-my-claudecode:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force.`,
+            reason: `[ULTRAQA - Cycle ${cycle + 1}/${maxCycles}] Tests not all passing. Continue fixing. When all tests pass, run /oh-my-black:cancel to cleanly exit and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force.`,
           }),
         );
         return;
@@ -469,7 +469,7 @@ async function main() {
         reason += ` ${totalIncomplete} incomplete ${itemType} remain. Continue working.`;
       } else if (newCount >= 3) {
         // Only suggest cancel after minimum iterations (guard against no-tasks-created scenario)
-        reason += ` If all work is complete, run /oh-my-claudecode:cancel to cleanly exit ultrawork mode and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force. Otherwise, continue working.`;
+        reason += ` If all work is complete, run /oh-my-black:cancel to cleanly exit ultrawork mode and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force. Otherwise, continue working.`;
       } else {
         // Early iterations with no tasks yet - just tell LLM to continue
         reason += ` Continue working - create Tasks to track your progress.`;
@@ -505,7 +505,7 @@ async function main() {
         reason += ` ${totalIncomplete} incomplete ${itemType} remain. Continue working.`;
       } else if (newCount >= 3) {
         // Only suggest cancel after minimum iterations (guard against no-tasks-created scenario)
-        reason += ` If all work is complete, run /oh-my-claudecode:cancel to cleanly exit ecomode and clean up state files. If cancel fails, retry with /oh-my-claudecode:cancel --force. Otherwise, continue working.`;
+        reason += ` If all work is complete, run /oh-my-black:cancel to cleanly exit ecomode and clean up state files. If cancel fails, retry with /oh-my-black:cancel --force. Otherwise, continue working.`;
       } else {
         // Early iterations with no tasks yet - just tell LLM to continue
         reason += ` Continue working - create Tasks to track your progress.`;
