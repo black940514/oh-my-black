@@ -46,7 +46,7 @@ Based on the **Claude Code Task System** paradigm, it implements:
 claude plugin marketplace add github:black940514/oh-my-black
 
 # Install the plugin
-claude plugin install oh-my-black@omb
+claude plugin install oh-my-black@oh-my-black
 
 # Restart Claude Code, then in Claude Code:
 /oh-my-black:omb-setup
