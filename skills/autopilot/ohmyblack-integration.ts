@@ -549,9 +549,10 @@ async function executeWorkflowWithBV(
 				break;
 			}
 
-			// Wait for running tasks (in real implementation)
-			// For now, we simulate execution
-			break;
+			// Wait for running tasks to complete before checking again
+			// Small delay to prevent busy-waiting
+			await new Promise((resolve) => setTimeout(resolve, 100));
+			continue;
 		}
 
 		// Execute available tasks (potentially in parallel)

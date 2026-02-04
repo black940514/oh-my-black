@@ -245,11 +245,14 @@ export function getAvailableTasks(workflow: WorkflowState): WorkflowTask[] {
     return [];
   }
 
-  // Find pending tasks (not blocked, not assigned)
-  const pendingTasks = workflow.tasks.filter(t => t.status === 'pending');
+  // Find tasks ready to execute (pending or assigned)
+  // Note: assigned tasks have been claimed but not yet started
+  const readyTasks = workflow.tasks.filter(
+    t => t.status === 'pending' || t.status === 'assigned'
+  );
 
   // Return up to availableSlots tasks
-  return pendingTasks.slice(0, availableSlots);
+  return readyTasks.slice(0, availableSlots);
 }
 
 // ============================================================================
