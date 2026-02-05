@@ -18,6 +18,171 @@ const {
 const { join, dirname, resolve, normalize } = require("path");
 const { homedir } = require("os");
 
+/**
+ * Global registry path for tracking active modes across all projects.
+ * This allows the Stop hook to find active modes even when directory
+ * resolution fails (e.g., when process.cwd() is home directory).
+ */
+const GLOBAL_ACTIVE_MODES_REGISTRY = join(homedir(), ".claude", ".omb-active-modes.json");
+
+/**
+ * Read the global active modes registry.
+ * @returns {object} - Registry object { [projectPath]: { mode, startedAt, sessionId } }
+ */
+function readActiveModesRegistry() {
+  try {
+    if (!existsSync(GLOBAL_ACTIVE_MODES_REGISTRY)) return {};
+    const data = JSON.parse(readFileSync(GLOBAL_ACTIVE_MODES_REGISTRY, "utf-8"));
+    return data || {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Write the global active modes registry.
+ * @param {object} registry - Registry object to write
+ */
+function writeActiveModesRegistry(registry) {
+  try {
+    const dir = dirname(GLOBAL_ACTIVE_MODES_REGISTRY);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(GLOBAL_ACTIVE_MODES_REGISTRY, JSON.stringify(registry, null, 2));
+  } catch {
+    // Silent fail - registry is a performance optimization, not critical
+  }
+}
+
+/**
+ * Register an active mode in the global registry.
+ * @param {string} projectPath - Project path
+ * @param {string} mode - Mode name (ralph, autopilot, etc.)
+ * @param {string} sessionId - Session ID
+ */
+function registerActiveMode(projectPath, mode, sessionId) {
+  const registry = readActiveModesRegistry();
+  const normalizedPath = normalizePath(projectPath);
+  registry[normalizedPath] = {
+    mode,
+    startedAt: new Date().toISOString(),
+    sessionId,
+    statePath: join(normalizedPath, ".omb", "state", `${mode}-state.json`)
+  };
+  writeActiveModesRegistry(registry);
+}
+
+/**
+ * Unregister a mode from the global registry.
+ * @param {string} projectPath - Project path
+ */
+function unregisterActiveMode(projectPath) {
+  const registry = readActiveModesRegistry();
+  const normalizedPath = normalizePath(projectPath);
+  delete registry[normalizedPath];
+  writeActiveModesRegistry(registry);
+}
+
+/**
+ * Get all active modes from the registry that match the current session or are recent.
+ * @param {string} currentSessionId - Current session ID
+ * @returns {Array} - Array of { projectPath, mode, statePath, sessionId }
+ */
+function getActiveModes(currentSessionId) {
+  const registry = readActiveModesRegistry();
+  const now = Date.now();
+  const activeModes = [];
+
+  for (const [projectPath, entry] of Object.entries(registry)) {
+    // Skip stale entries (older than 2 hours)
+    const age = now - new Date(entry.startedAt).getTime();
+    if (age > 2 * 60 * 60 * 1000) continue;
+
+    // Include if session matches or no session specified
+    if (!currentSessionId || !entry.sessionId || entry.sessionId === currentSessionId) {
+      activeModes.push({
+        projectPath,
+        mode: entry.mode,
+        statePath: entry.statePath,
+        sessionId: entry.sessionId
+      });
+    }
+  }
+
+  return activeModes;
+}
+
+/**
+ * Normalize a path for comparison.
+ */
+function normalizePath(p) {
+  if (!p) return "";
+  let normalized = resolve(p);
+  normalized = normalize(normalized);
+  normalized = normalized.replace(/[\/\\]+$/, "");
+  if (process.platform === "win32") {
+    normalized = normalized.toLowerCase();
+  }
+  return normalized;
+}
+
+/**
+ * Check if a path is inside a .claude-accounts structure.
+ * Returns the account directory if found, null otherwise.
+ * @param {string} dir - Directory to check
+ * @returns {string|null} - Account directory or null
+ */
+function getAccountDirectory(dir) {
+  const normalized = normalizePath(dir);
+  const accountsMatch = normalized.match(/(.+[\/\\]\.claude-accounts[\/\\][^\/\\]+)/i);
+  if (accountsMatch) {
+    return accountsMatch[1];
+  }
+  return null;
+}
+
+/**
+ * Find the project root by looking for common project markers.
+ * Respects .claude-accounts boundaries to prevent cross-account state leakage.
+ * @param {string} startDir - Directory to start searching from
+ * @returns {string} - Project root or startDir if not found
+ */
+function findProjectRoot(startDir) {
+  const markers = ['.git', 'package.json', 'pyproject.toml', '.claude', 'CLAUDE.md', 'Cargo.toml', 'go.mod'];
+
+  // Check if we're inside a .claude-accounts structure
+  const accountDir = getAccountDirectory(startDir);
+
+  let current = startDir;
+  const sep = process.platform === 'win32' ? '\\' : '/';
+  const root = process.platform === 'win32' ? current.split(sep)[0] + sep : '/';
+
+  while (current !== root) {
+    // Stop at .claude-accounts boundary to prevent cross-account state access
+    if (accountDir && !normalizePath(current).startsWith(accountDir)) {
+      break;
+    }
+
+    // Stop at home directory to prevent going too high
+    const home = homedir();
+    if (normalizePath(current) === normalizePath(home)) {
+      break;
+    }
+
+    for (const marker of markers) {
+      if (existsSync(join(current, marker))) {
+        return current;
+      }
+    }
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  return startDir; // Fallback to original directory
+}
+
 async function readStdin() {
   const chunks = [];
   for await (const chunk of process.stdin) {
@@ -57,12 +222,20 @@ function writeJsonFile(path, data) {
 const STALE_STATE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 /**
- * Check if a state is stale based on its timestamps.
- * A state is considered stale if it hasn't been updated recently.
+ * Check if a state is stale based on its timestamps and session ID.
+ * A state is considered stale if it hasn't been updated recently or belongs to a different session.
  * We check both `last_checked_at` and `started_at` - using whichever is more recent.
+ * @param {object} state - State object to check
+ * @param {string} currentSessionId - Current session ID to compare against
+ * @returns {boolean} - True if state is stale or belongs to different session
  */
-function isStaleState(state) {
+function isStaleState(state, currentSessionId) {
   if (!state) return true;
+
+  // If session_id exists and doesn't match current session, consider stale
+  if (currentSessionId && state.session_id && state.session_id !== currentSessionId) {
+    return true;
+  }
 
   const lastChecked = state.last_checked_at
     ? new Date(state.last_checked_at).getTime()
@@ -77,29 +250,23 @@ function isStaleState(state) {
 }
 
 /**
- * Normalize a path for comparison.
- */
-function normalizePath(p) {
-  if (!p) return "";
-  let normalized = resolve(p);
-  normalized = normalize(normalized);
-  normalized = normalized.replace(/[\/\\]+$/, "");
-  if (process.platform === "win32") {
-    normalized = normalized.toLowerCase();
-  }
-  return normalized;
-}
-
-/**
  * Check if a state belongs to the current project.
+ * Enhanced to handle .claude-accounts boundaries and multiple verification layers.
+ * @param {object} state - State object to check
+ * @param {string} currentDirectory - Current working directory
+ * @param {string} projectRoot - Resolved project root
+ * @param {boolean} isGlobalState - Whether state was read from global location
+ * @returns {boolean} - True if state belongs to current project
  */
 function isStateForCurrentProject(
   state,
   currentDirectory,
+  projectRoot,
   isGlobalState = false,
 ) {
   if (!state) return true;
 
+  // If state has no project_path, only allow if not global
   if (!state.project_path) {
     if (isGlobalState) {
       return false;
@@ -107,7 +274,30 @@ function isStateForCurrentProject(
     return true;
   }
 
-  return normalizePath(state.project_path) === normalizePath(currentDirectory);
+  const stateProjectPath = normalizePath(state.project_path);
+  const normalizedCurrent = normalizePath(currentDirectory);
+  const normalizedRoot = normalizePath(projectRoot);
+
+  // Check exact match with either current directory or project root
+  if (stateProjectPath === normalizedCurrent || stateProjectPath === normalizedRoot) {
+    return true;
+  }
+
+  // Check if state belongs to a different .claude-accounts account
+  const stateAccount = getAccountDirectory(state.project_path);
+  const currentAccount = getAccountDirectory(currentDirectory);
+
+  // If both are in different accounts, definitely not the same project
+  if (stateAccount && currentAccount && stateAccount !== currentAccount) {
+    return false;
+  }
+
+  // If current is in an account but state is not (or vice versa), be cautious
+  if ((stateAccount && !currentAccount) || (!stateAccount && currentAccount)) {
+    return false;
+  }
+
+  return false;
 }
 
 /**
@@ -181,7 +371,7 @@ function countIncompleteTodos(sessionId, projectDir) {
 
   // Project-local todos only
   for (const path of [
-    join(projectDir, ".omc", "todos.json"),
+    join(projectDir, ".omb", "todos.json"),
     join(projectDir, ".claude", "todos.json"),
   ]) {
     try {
@@ -264,6 +454,33 @@ function isUserAbort(data) {
   );
 }
 
+/**
+ * Determine the best directory to use for state file lookup.
+ * Priority: data.directory > data.cwd > CLAUDE_PROJECT_DIR > process.cwd()
+ * @param {object} data - Hook input data
+ * @returns {string} - Resolved directory path
+ */
+function resolveDirectory(data) {
+  // 1. Explicit directory from hook data (highest priority)
+  if (data.directory && existsSync(data.directory)) {
+    return data.directory;
+  }
+
+  // 2. CWD from hook data
+  if (data.cwd && existsSync(data.cwd)) {
+    return data.cwd;
+  }
+
+  // 3. Environment variable (Claude Code may set this)
+  const envDir = process.env.CLAUDE_PROJECT_DIR;
+  if (envDir && existsSync(envDir)) {
+    return envDir;
+  }
+
+  // 4. Fallback to process.cwd()
+  return process.cwd();
+}
+
 async function main() {
   try {
     const input = await readStdin();
@@ -272,9 +489,15 @@ async function main() {
       data = JSON.parse(input);
     } catch {}
 
-    const directory = data.directory || process.cwd();
+    const directory = resolveDirectory(data);
     const sessionId = data.sessionId || data.session_id || "";
-    const stateDir = join(directory, ".omc", "state");
+    const projectRoot = findProjectRoot(directory);
+    const stateDir = join(projectRoot, ".omb", "state");
+
+    // Log for debugging (only in verbose mode)
+    if (process.env.OMB_DEBUG === "1") {
+      console.error(`[persistent-mode] directory=${directory}, projectRoot=${projectRoot}, stateDir=${stateDir}`);
+    }
 
     // CRITICAL: Never block context-limit stops.
     // Blocking these causes a deadlock where Claude Code cannot compact.
@@ -290,10 +513,27 @@ async function main() {
       return;
     }
 
+    // Check global registry for active modes (fallback when local lookup fails)
+    // This handles cases where process.cwd() is wrong (e.g., home directory)
+    const activeModes = getActiveModes(sessionId);
+    let actualStateDir = stateDir;
+    let actualProjectRoot = projectRoot;
+
+    // If we found active modes in registry and local state dir doesn't exist,
+    // use the registered project path instead
+    if (activeModes.length > 0 && !existsSync(stateDir)) {
+      const firstActive = activeModes[0];
+      actualProjectRoot = firstActive.projectPath;
+      actualStateDir = join(actualProjectRoot, ".omb", "state");
+      if (process.env.OMB_DEBUG === "1") {
+        console.error(`[persistent-mode] Using registry fallback: ${actualStateDir}`);
+      }
+    }
+
     // Read all mode states (local-only)
-    const ralph = readStateFile(stateDir, "ralph-state.json");
-    const autopilot = readStateFile(stateDir, "autopilot-state.json");
-    const ultrapilot = readStateFile(stateDir, "ultrapilot-state.json");
+    const ralph = readStateFile(actualStateDir, "ralph-state.json");
+    const autopilot = readStateFile(actualStateDir, "autopilot-state.json");
+    const ultrapilot = readStateFile(actualStateDir, "ultrapilot-state.json");
     const ultrawork = readStateFile(stateDir, "ultrawork-state.json");
     const ecomode = readStateFile(stateDir, "ecomode-state.json");
     const ultraqa = readStateFile(stateDir, "ultraqa-state.json");
@@ -308,16 +548,30 @@ async function main() {
     const todoCount = countIncompleteTodos(sessionId, directory);
     const totalIncomplete = taskCount + todoCount;
 
+    // Helper to check project match for all modes
+    const isForThisProject = (stateObj) =>
+      isStateForCurrentProject(stateObj.state, directory, actualProjectRoot, stateObj.isGlobal);
+
     // Priority 1: Ralph Loop (explicit persistence mode)
     // Skip if state is stale (older than 2 hours) - prevents blocking new sessions
-    if (ralph.state?.active && !isStaleState(ralph.state)) {
+    if (ralph.state?.active && !isStaleState(ralph.state, sessionId) && isForThisProject(ralph)) {
       const iteration = ralph.state.iteration || 1;
       const maxIter = ralph.state.max_iterations || 100;
 
       if (iteration < maxIter) {
         ralph.state.iteration = iteration + 1;
         ralph.state.last_checked_at = new Date().toISOString();
+        // Ensure critical fields exist
+        if (!ralph.state.project_path) {
+          ralph.state.project_path = actualProjectRoot;
+        }
+        if (!ralph.state.session_id) {
+          ralph.state.session_id = sessionId || `ralph-${Date.now()}`;
+        }
         writeJsonFile(ralph.path, ralph.state);
+
+        // Register in global registry for cross-directory lookup
+        registerActiveMode(ralph.state.project_path, "ralph", ralph.state.session_id);
 
         console.log(
           JSON.stringify({
@@ -330,14 +584,25 @@ async function main() {
     }
 
     // Priority 2: Autopilot (high-level orchestration)
-    if (autopilot.state?.active && !isStaleState(autopilot.state)) {
-      const phase = autopilot.state.phase || "unknown";
-      if (phase !== "complete") {
+    if (autopilot.state?.active && !isStaleState(autopilot.state, sessionId) && isForThisProject(autopilot)) {
+      const phase = autopilot.state.phase || "init";
+      // If phase is missing or not "complete", treat as active
+      if (phase !== "complete" && phase !== "failed") {
         const newCount = (autopilot.state.reinforcement_count || 0) + 1;
         if (newCount <= 20) {
           autopilot.state.reinforcement_count = newCount;
           autopilot.state.last_checked_at = new Date().toISOString();
+          // Ensure critical fields exist
+          if (!autopilot.state.project_path) {
+            autopilot.state.project_path = actualProjectRoot;
+          }
+          if (!autopilot.state.session_id) {
+            autopilot.state.session_id = sessionId || `autopilot-${Date.now()}`;
+          }
           writeJsonFile(autopilot.path, autopilot.state);
+
+          // Register in global registry for cross-directory lookup
+          registerActiveMode(autopilot.state.project_path, "autopilot", autopilot.state.session_id);
 
           console.log(
             JSON.stringify({
@@ -351,7 +616,7 @@ async function main() {
     }
 
     // Priority 3: Ultrapilot (parallel autopilot)
-    if (ultrapilot.state?.active && !isStaleState(ultrapilot.state)) {
+    if (ultrapilot.state?.active && !isStaleState(ultrapilot.state, sessionId) && isForThisProject(ultrapilot)) {
       const workers = ultrapilot.state.workers || [];
       const incomplete = workers.filter(
         (w) => w.status !== "complete" && w.status !== "failed",
@@ -361,6 +626,13 @@ async function main() {
         if (newCount <= 20) {
           ultrapilot.state.reinforcement_count = newCount;
           ultrapilot.state.last_checked_at = new Date().toISOString();
+          // Ensure critical fields exist
+          if (!ultrapilot.state.project_path) {
+            ultrapilot.state.project_path = directory;
+          }
+          if (!ultrapilot.state.sessionId) {
+            ultrapilot.state.sessionId = sessionId || `ultrapilot-${Date.now()}`;
+          }
           writeJsonFile(ultrapilot.path, ultrapilot.state);
 
           console.log(
@@ -375,7 +647,9 @@ async function main() {
     }
 
     // Priority 4: Swarm (coordinated agents with SQLite)
-    if (swarmMarker && swarmSummary?.active && !isStaleState(swarmSummary)) {
+    // Swarm uses different state structure, create wrapper for project check
+    const swarmStateObj = { state: swarmSummary, isGlobal: false };
+    if (swarmMarker && swarmSummary?.active && !isStaleState(swarmSummary, sessionId) && isForThisProject(swarmStateObj)) {
       const pending =
         (swarmSummary.tasks_pending || 0) + (swarmSummary.tasks_claimed || 0);
       if (pending > 0) {
@@ -397,7 +671,7 @@ async function main() {
     }
 
     // Priority 5: Pipeline (sequential stages)
-    if (pipeline.state?.active && !isStaleState(pipeline.state)) {
+    if (pipeline.state?.active && !isStaleState(pipeline.state, sessionId) && isForThisProject(pipeline)) {
       const currentStage = pipeline.state.current_stage || 0;
       const totalStages = pipeline.state.stages?.length || 0;
       if (currentStage < totalStages) {
@@ -419,7 +693,7 @@ async function main() {
     }
 
     // Priority 6: UltraQA (QA cycling)
-    if (ultraqa.state?.active && !isStaleState(ultraqa.state)) {
+    if (ultraqa.state?.active && !isStaleState(ultraqa.state, sessionId) && isForThisProject(ultraqa)) {
       const cycle = ultraqa.state.cycle || 1;
       const maxCycles = ultraqa.state.max_cycles || 10;
       if (cycle < maxCycles && !ultraqa.state.all_passing) {
@@ -444,10 +718,10 @@ async function main() {
     // Project isolation: only block if state belongs to this project
     if (
       ultrawork.state?.active &&
-      !isStaleState(ultrawork.state) &&
+      !isStaleState(ultrawork.state, sessionId) &&
       (!ultrawork.state.session_id ||
         ultrawork.state.session_id === sessionId) &&
-      isStateForCurrentProject(ultrawork.state, directory, ultrawork.isGlobal)
+      isForThisProject(ultrawork)
     ) {
       const newCount = (ultrawork.state.reinforcement_count || 0) + 1;
       const maxReinforcements = ultrawork.state.max_reinforcements || 50;
@@ -484,7 +758,7 @@ async function main() {
     }
 
     // Priority 8: Ecomode - ALWAYS continue while active
-    if (ecomode.state?.active && !isStaleState(ecomode.state)) {
+    if (ecomode.state?.active && !isStaleState(ecomode.state, sessionId) && isForThisProject(ecomode)) {
       const newCount = (ecomode.state.reinforcement_count || 0) + 1;
       const maxReinforcements = ecomode.state.max_reinforcements || 50;
 

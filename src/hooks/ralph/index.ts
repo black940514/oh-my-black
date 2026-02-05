@@ -138,3 +138,18 @@ export {
   // Types
   type VerificationState
 } from './verifier.js';
+
+// ============================================================================
+// Ralph Team Integration (Optional Team Composition)
+// ============================================================================
+
+export {
+  // Team composition
+  shouldUseAutoTeam,
+  composeTeamForRalph,
+  estimateComplexity,
+
+  // Types
+  type RalphConfig,
+  type RalphTeamConfig
+} from './team-integration.js';

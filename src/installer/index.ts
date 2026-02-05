@@ -28,7 +28,7 @@ export const SKILLS_DIR = join(CLAUDE_CONFIG_DIR, 'skills');
 export const HOOKS_DIR = join(CLAUDE_CONFIG_DIR, 'hooks');
 export const HUD_DIR = join(CLAUDE_CONFIG_DIR, 'hud');
 export const SETTINGS_FILE = join(CLAUDE_CONFIG_DIR, 'settings.json');
-export const VERSION_FILE = join(CLAUDE_CONFIG_DIR, '.omc-version.json');
+export const VERSION_FILE = join(CLAUDE_CONFIG_DIR, '.omb-version.json');
 
 /**
  * Core commands - DISABLED for v3.0+
@@ -546,7 +546,7 @@ export function install(options: InstallOptions = {}): InstallResult {
         '  }',
         '  ',
         '  // 2. Plugin cache (for production installs)',
-        '  const pluginCacheBase = join(home, ".claude/plugins/cache/omc/oh-my-black");',
+        '  const pluginCacheBase = join(home, ".claude/plugins/cache/omb/oh-my-black");',
         '  if (existsSync(pluginCacheBase)) {',
         '    try {',
         '      const versions = readdirSync(pluginCacheBase);',

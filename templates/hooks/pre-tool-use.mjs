@@ -16,7 +16,7 @@ const { readStdin } = await import(path.join(__dirname, 'lib', 'stdin.mjs'));
 
 // Allowed path patterns (no warning)
 const ALLOWED_PATH_PATTERNS = [
-  /\.omc\//,
+  /\.omb\//,
   /\.claude\//,
   /\/\.claude\//,
   /CLAUDE\.md$/,
@@ -49,16 +49,16 @@ function isSourceFile(filePath) {
 // Patterns that indicate file modification in bash commands
 const FILE_MODIFY_PATTERNS = [
   /sed\s+-i/,
-  />\s*[^&]/,
-  />>/,
+  /(?<![0-9])>\s*[^&\/]/,
+  /(?<![0-9])>>/,
   /tee\s+/,
-  /cat\s+.*>\s*/,
-  /echo\s+.*>\s*/,
-  /printf\s+.*>\s*/,
+  /cat\s+.*(?<![0-9])>\s*/,
+  /echo\s+.*(?<![0-9])>\s*/,
+  /printf\s+.*(?<![0-9])>\s*/,
 ];
 
 // Source file pattern for command inspection
-const SOURCE_EXT_PATTERN = /\.(ts|tsx|js|jsx|mjs|cjs|py|pyw|go|rs|java|kt|scala|c|cpp|cc|h|hpp|rb|php|svelte|vue|graphql|gql|sh|bash|zsh)/i;
+const SOURCE_EXT_PATTERN = /\.(tsx|jsx|mjs|cjs|pyw|cpp|hpp|graphql|gql|svelte|vue|scala|bash|zsh|ts|js|py|go|rs|java|kt|cc|rb|php|sh|[ch])(?=[^a-zA-Z]|$)/i;
 
 function checkBashCommand(command) {
   // Check if command might modify files

@@ -65,7 +65,7 @@ function getEnforcementLevel(directory: string): EnforcementLevel {
     return enforcementCache.level;
   }
 
-  const localConfig = path.join(directory, '.omc', 'config.json');
+  const localConfig = path.join(directory, '.omb', 'config.json');
   const globalConfig = path.join(os.homedir(), '.claude', '.omb-config.json');
 
   let level: EnforcementLevel = 'warn'; // Default

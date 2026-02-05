@@ -104,8 +104,8 @@ async function main() {
     }
 
     // Check for ultrawork state - only restore if session matches (issue #311)
-    const ultraworkState = readJsonFile(join(directory, '.omc', 'state', 'ultrawork-state.json'))
-      || readJsonFile(join(homedir(), '.omc', 'state', 'ultrawork-state.json'));
+    const ultraworkState = readJsonFile(join(directory, '.omb', 'state', 'ultrawork-state.json'))
+      || readJsonFile(join(homedir(), '.omb', 'state', 'ultrawork-state.json'));
 
     if (ultraworkState?.active && (!ultraworkState.session_id || ultraworkState.session_id === sessionId)) {
       messages.push(`<session-restore>
@@ -124,7 +124,7 @@ Continue working in ultrawork mode until all tasks are complete.
     }
 
     // Check for ralph loop state
-    const ralphState = readJsonFile(join(directory, '.omc', 'ralph-state.json'));
+    const ralphState = readJsonFile(join(directory, '.omb', 'ralph-state.json'));
     if (ralphState?.active) {
       messages.push(`<session-restore>
 
@@ -147,7 +147,7 @@ Continue working until the task is verified complete.
     // That directory accumulates todo files from ALL past sessions across all
     // projects, causing phantom task counts in fresh sessions (see issue #354).
     const localTodoPaths = [
-      join(directory, '.omc', 'todos.json'),
+      join(directory, '.omb', 'todos.json'),
       join(directory, '.claude', 'todos.json')
     ];
     let incompleteCount = 0;
@@ -176,7 +176,7 @@ Please continue working on these tasks.
     }
 
     // Check for notepad Priority Context
-    const notepadPath = join(directory, '.omc', 'notepad.md');
+    const notepadPath = join(directory, '.omb', 'notepad.md');
     if (existsSync(notepadPath)) {
       try {
         const notepadContent = readFileSync(notepadPath, 'utf-8');

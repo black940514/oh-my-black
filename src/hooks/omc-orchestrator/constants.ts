@@ -13,7 +13,7 @@ export const ALLOWED_PATH_PREFIX = '.omb/';
 
 /** Path patterns that orchestrator IS allowed to modify directly */
 export const ALLOWED_PATH_PATTERNS = [
-  /^\.omc\//,                    // .omb/**
+  /^\.omb\//,                    // .omb/**
   /^\.claude\//,                 // .claude/** (local)
   /^~?\/\.claude\//,             // ~/.claude/** (global)
   /\/\.claude\//,                // any /.claude/ path

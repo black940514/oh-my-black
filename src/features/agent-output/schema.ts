@@ -42,13 +42,30 @@ export interface AgentOutput {
  */
 export interface Evidence {
   /** Type of evidence provided */
-  type: 'command_output' | 'test_result' | 'diagnostics' | 'manual_check';
+  type: 'command_output' | 'test_result' | 'diagnostics' | 'manual_check' | 'wiring_proof';
 
   /** Actual evidence content (command output, test results, etc.) */
   content: string;
 
   /** Whether this evidence indicates success or failure */
   passed: boolean;
+
+  /** For wiring_proof type: specific wiring proofs provided */
+  wiringProofs?: WiringProofDetail[];
+}
+
+/**
+ * Detail for wiring proof evidence
+ */
+export interface WiringProofDetail {
+  /** Type of proof provided */
+  proofType: 'entry_point' | 'call_site' | 'activation' | 'state_config';
+
+  /** Location of the proof (file:line format) */
+  location: string;
+
+  /** Human-readable description of the proof */
+  description: string;
 }
 
 /**

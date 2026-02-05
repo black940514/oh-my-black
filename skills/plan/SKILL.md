@@ -24,6 +24,18 @@ You guide users through planning by:
 | consensus | --consensus, "ralplan" | Planner → Architect → Critic loop until consensus |
 | review | --review | Critic review of existing plan |
 
+## CRITICAL: Plan-Only - No Auto-Implementation
+
+**ALL planning modes produce PLANS ONLY. Never auto-implement.**
+
+When planning is complete (plan approved or saved):
+1. Save plan to `.omb/plans/`
+2. Display completion message
+3. **STOP. DO NOT implement automatically.**
+4. Ask user: "구현을 시작하시겠습니까?"
+
+**Override Continuation Enforcement:** Planning tasks are COMPLETE when the plan is saved. The deliverable is the PLAN, not code. "FUNCTIONALITY" checks do NOT apply - the plan IS the functionality.
+
 ### Review Mode
 
 When `--review` is specified or user says "review this plan":

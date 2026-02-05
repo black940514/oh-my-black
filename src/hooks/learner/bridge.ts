@@ -26,8 +26,8 @@ export const USER_SKILLS_DIR = join(
   "skills",
   "omc-learned",
 );
-export const GLOBAL_SKILLS_DIR = join(homedir(), ".omc", "skills");
-export const PROJECT_SKILLS_SUBDIR = join(".omc", "skills");
+export const GLOBAL_SKILLS_DIR = join(homedir(), ".omb", "skills");
+export const PROJECT_SKILLS_SUBDIR = join(".omb", "skills");
 export const SKILL_EXTENSION = ".md";
 
 /** Session TTL: 1 hour */

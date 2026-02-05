@@ -16,7 +16,7 @@
 import { loadConfig, findContextFiles, loadContextFromFiles } from './config/loader.js';
 import { getAgentDefinitions, omcSystemPrompt } from './agents/definitions.js';
 import { getDefaultMcpServers, toSdkMcpFormat } from './mcp/servers.js';
-import { omcToolsServer, getOmcToolNames } from './mcp/omb-tools-server.js';
+import { ombToolsServer, getOmbToolNames } from './mcp/omb-tools-server.js';
 import { createMagicKeywordProcessor, detectMagicKeywords } from './features/magic-keywords.js';
 import { continuationSystemPromptAddition } from './features/continuation-enforcement.js';
 import {
@@ -30,7 +30,7 @@ import type { PluginConfig, SessionState } from './shared/types.js';
 export { loadConfig, getAgentDefinitions, omcSystemPrompt };
 export { getDefaultMcpServers, toSdkMcpFormat } from './mcp/servers.js';
 export { lspTools, astTools, allCustomTools } from './tools/index.js';
-export { omcToolsServer, omcToolNames, getOmcToolNames } from './mcp/omb-tools-server.js';
+export { ombToolsServer, ombToolNames, getOmbToolNames } from './mcp/omb-tools-server.js';
 export { createMagicKeywordProcessor, detectMagicKeywords } from './features/magic-keywords.js';
 export {
   createBackgroundTaskManager,
@@ -340,12 +340,12 @@ export function createSisyphusSession(options?: SisyphusOptions): SisyphusSessio
   }
 
   // Add OMB custom tools in MCP format (LSP, AST, python_repl)
-  const omcTools = getOmcToolNames({
+  const ombTools = getOmbToolNames({
     includeLsp: config.features?.lspTools !== false,
     includeAst: config.features?.astTools !== false,
     includePython: true
   });
-  allowedTools.push(...omcTools);
+  allowedTools.push(...ombTools);
 
   // Create magic keyword processor
   const processPrompt = createMagicKeywordProcessor(config.magicKeywords);
@@ -367,7 +367,7 @@ export function createSisyphusSession(options?: SisyphusOptions): SisyphusSessio
         agents,
         mcpServers: {
           ...toSdkMcpFormat(externalMcpServers),
-          't': omcToolsServer as any
+          't': ombToolsServer as any
         },
         allowedTools,
         permissionMode: 'acceptEdits'

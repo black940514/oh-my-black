@@ -22,6 +22,15 @@ import {
   readUltraQAState
 } from '../ultraqa/index.js';
 import { canStartMode } from '../mode-registry/index.js';
+import { shouldUseTeamComposition, composeTeamForAutopilot } from './team-integration.js';
+import {
+  shouldUseWorkflowExecution,
+  createAutopilotWorkflow,
+  executeAutopilotWorkflow,
+  type ExecutionCallbacks
+} from './workflow-integration.js';
+import type { DecompositionResult } from '../../features/task-decomposer/types.js';
+import type { WorkflowState } from '../../features/team/workflow.js';
 
 const STATE_FILE = 'autopilot-state.json';
 const SPEC_DIR = 'autopilot';
@@ -34,7 +43,7 @@ const SPEC_DIR = 'autopilot';
  * Get the state file path
  */
 function getStateFilePath(directory: string): string {
-  const omcDir = join(directory, '.omc');
+  const omcDir = join(directory, '.omb');
   return join(omcDir, 'state', STATE_FILE);
 }
 
@@ -42,7 +51,7 @@ function getStateFilePath(directory: string): string {
  * Ensure the .omb/state directory exists
  */
 function ensureStateDir(directory: string): void {
-  const stateDir = join(directory, '.omc', 'state');
+  const stateDir = join(directory, '.omb', 'state');
   if (!existsSync(stateDir)) {
     mkdirSync(stateDir, { recursive: true });
   }
@@ -53,7 +62,7 @@ function ensureStateDir(directory: string): void {
  */
 export function ensureAutopilotDir(directory: string): string {
   ensureStateDir(directory);
-  const autopilotDir = join(directory, '.omc', SPEC_DIR);
+  const autopilotDir = join(directory, '.omb', SPEC_DIR);
   if (!existsSync(autopilotDir)) {
     mkdirSync(autopilotDir, { recursive: true });
   }
@@ -137,9 +146,27 @@ export function initAutopilot(
   const mergedConfig = { ...DEFAULT_CONFIG, ...config };
   const now = new Date().toISOString();
 
+  // Compose team if ohmyblack mode is enabled
+  let teamComposition: AutopilotState['teamComposition'] = undefined;
+  if (shouldUseTeamComposition(mergedConfig)) {
+    const initialAnalysis = {
+      task: idea,
+      type: 'feature' as const,
+      complexity: 0.5,
+      isParallelizable: true,
+      estimatedComponents: 3,
+      areas: ['implementation'],
+      technologies: [],
+      filePatterns: [],
+      dependencies: []
+    };
+    teamComposition = composeTeamForAutopilot(initialAnalysis, undefined, mergedConfig);
+  }
+
   const state: AutopilotState = {
     active: true,
     phase: 'expansion',
+    teamComposition,
     iteration: 1,
     max_iterations: mergedConfig.maxIterations ?? 10,
     originalIdea: idea,
@@ -186,8 +213,9 @@ export function initAutopilot(
     phase_durations: {},
     total_agents_spawned: 0,
     wisdom_entries: 0,
-    session_id: sessionId,
-    project_path: directory
+    session_id: sessionId || `autopilot-${Date.now()}`,
+    project_path: directory,
+    last_checked_at: now
   };
 
   ensureAutopilotDir(directory);
@@ -317,14 +345,14 @@ export function updateValidation(
  * Get the spec file path
  */
 export function getSpecPath(directory: string): string {
-  return join(directory, '.omc', SPEC_DIR, 'spec.md');
+  return join(directory, '.omb', SPEC_DIR, 'spec.md');
 }
 
 /**
  * Get the plan file path
  */
 export function getPlanPath(directory: string): string {
-  return join(directory, '.omc', 'plans', 'autopilot-impl.md');
+  return join(directory, '.omb', 'plans', 'autopilot-impl.md');
 }
 
 // ============================================================================
@@ -486,7 +514,7 @@ export function transitionToComplete(directory: string): TransitionResult {
  */
 export function transitionToFailed(
   directory: string,
-  error: string
+  _error: string
 ): TransitionResult {
   const state = transitionPhase(directory, 'failed');
 
@@ -497,7 +525,59 @@ export function transitionToFailed(
     };
   }
 
+  // Note: _error could be stored in state if needed for debugging
   return { success: true, state };
+}
+
+/**
+ * Start execution phase with workflow integration (for ohmyblack mode)
+ *
+ * If ohmyblack mode is enabled and team composition exists,
+ * creates and executes a workflow for the decomposed tasks.
+ */
+export async function startExecutionWithWorkflow(
+  directory: string,
+  decomposition: DecompositionResult,
+  callbacks?: ExecutionCallbacks
+): Promise<{ success: boolean; error?: string; workflowState?: WorkflowState }> {
+  const state = readAutopilotState(directory);
+
+  if (!state || state.phase !== 'execution') {
+    return { success: false, error: 'Not in execution phase' };
+  }
+
+  // Check if workflow execution should be used
+  const config = { ...DEFAULT_CONFIG, ohmyblack: { enabled: !!state.teamComposition } };
+  if (!shouldUseWorkflowExecution(config) || !state.teamComposition) {
+    return { success: false, error: 'Workflow execution not enabled or no team composition' };
+  }
+
+  try {
+    // Create workflow from team and decomposition
+    const workflowId = `autopilot-${state.session_id || Date.now()}`;
+    const workflow = createAutopilotWorkflow(
+      workflowId,
+      state.teamComposition.team,
+      decomposition,
+      config
+    );
+
+    // Execute workflow
+    const finalWorkflow = await executeAutopilotWorkflow(workflow, callbacks);
+
+    // Update execution state
+    updateExecution(directory, {
+      workflow_active: true,
+      workflow_id: workflowId,
+      tasks_completed: finalWorkflow.tasks.filter(t => t.status === 'completed').length,
+      tasks_total: finalWorkflow.tasks.length
+    });
+
+    return { success: true, workflowState: finalWorkflow };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { success: false, error: errorMessage };
+  }
 }
 
 /**

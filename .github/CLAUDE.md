@@ -7,8 +7,8 @@ This file provides context for Claude when working on this repository via GitHub
 oh-my-black is a Claude Code plugin that provides multi-agent orchestration capabilities.
 
 ### Key Features
-- **32 specialized agents** with intelligent model routing (Haiku/Sonnet/Opus tiers)
-- **35 slash commands** including /oh-my-black:ultrawork, /oh-my-black:deepinit, /oh-my-black:ralph
+- **42 specialized agents** with intelligent model routing (Haiku/Sonnet/Opus tiers)
+- **38 slash commands** including /oh-my-black:ultrawork, /oh-my-black:deepinit, /oh-my-black:ralph
 - **Smart delegation** - automatically routes tasks to appropriate specialist agents
 - **Background execution** - runs long-running tasks asynchronously
 - **Cost optimization** - chillwork mode prefers cheaper model tiers

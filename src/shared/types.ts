@@ -16,7 +16,7 @@ export interface AgentConfig {
 export interface PluginConfig {
   // Agent model overrides
   agents?: {
-    omc?: { model?: string };
+    omb?: { model?: string };
     architect?: { model?: string; enabled?: boolean };
     researcher?: { model?: string };
     explore?: { model?: string };
@@ -27,7 +27,7 @@ export interface PluginConfig {
     critic?: { model?: string; enabled?: boolean };
     analyst?: { model?: string; enabled?: boolean };
     orchestratorSisyphus?: { model?: string; enabled?: boolean };
-    sisyphusJunior?: { model?: string; enabled?: boolean };
+    sisyphusJunior?: { model?: string; enabled?: boolean }; // Legacy name, maps to ombJunior
     planner?: { model?: string; enabled?: boolean };
   };
 
@@ -87,6 +87,23 @@ export interface PluginConfig {
     escalationKeywords?: string[];
     /** Keywords that suggest lower tier */
     simplificationKeywords?: string[];
+  };
+
+  // Wiring check configuration
+  wiringCheck?: {
+    /** Enable/disable the hook */
+    enabled?: boolean;
+    /** Only check modified files (vs full codebase) */
+    incrementalOnly?: boolean;
+    /** Fail on warnings too (not just errors) */
+    strict?: boolean;
+    /** Specific checks to run */
+    checks?: {
+      placeholders?: boolean;
+      unusedExports?: boolean;
+      registry?: boolean;
+      pathDrift?: boolean;
+    };
   };
 }
 

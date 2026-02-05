@@ -90,7 +90,7 @@ const EXCLUSIVE_MODES: ExecutionMode[] = ['autopilot', 'ultrapilot', 'swarm', 'p
  * Get the state directory path
  */
 export function getStateDir(cwd: string): string {
-  return join(cwd, '.omc', 'state');
+  return join(cwd, '.omb', 'state');
 }
 
 /**

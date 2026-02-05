@@ -32,7 +32,7 @@ describe('Mode Registry Integration', () => {
 
     it('should block when exclusive mode is active', () => {
       // Create autopilot state to simulate active mode
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       const autopilotStatePath = join(stateDir, 'autopilot-state.json');
       writeFileSync(autopilotStatePath, JSON.stringify({
@@ -52,7 +52,7 @@ describe('Mode Registry Integration', () => {
 
     it('should block when ultrapilot is active', () => {
       // Create ultrapilot state
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       const ultrapilotStatePath = join(stateDir, 'ultrapilot-state.json');
       writeFileSync(ultrapilotStatePath, JSON.stringify({
@@ -68,7 +68,7 @@ describe('Mode Registry Integration', () => {
 
     it('should allow non-exclusive modes when swarm is active', () => {
       // Create swarm marker
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       createModeMarker('swarm', testDir, { agentCount: 3 });
 
@@ -81,7 +81,7 @@ describe('Mode Registry Integration', () => {
 
   describe('createModeMarker', () => {
     it('should create marker file with metadata', () => {
-      const markerPath = join(testDir, '.omc', 'state', 'swarm-active.marker');
+      const markerPath = join(testDir, '.omb', 'state', 'swarm-active.marker');
 
       const success = createModeMarker('swarm', testDir, {
         agentCount: 5,
@@ -100,10 +100,10 @@ describe('Mode Registry Integration', () => {
     });
 
     it('should create directory if it does not exist', () => {
-      const markerPath = join(testDir, '.omc', 'state', 'swarm-active.marker');
+      const markerPath = join(testDir, '.omb', 'state', 'swarm-active.marker');
 
       // Ensure directory doesn't exist
-      expect(existsSync(join(testDir, '.omc'))).toBe(false);
+      expect(existsSync(join(testDir, '.omb'))).toBe(false);
 
       const success = createModeMarker('swarm', testDir, {});
 
@@ -121,7 +121,7 @@ describe('Mode Registry Integration', () => {
 
   describe('removeModeMarker', () => {
     it('should delete marker file', () => {
-      const markerPath = join(testDir, '.omc', 'state', 'swarm-active.marker');
+      const markerPath = join(testDir, '.omb', 'state', 'swarm-active.marker');
 
       createModeMarker('swarm', testDir, {});
       expect(existsSync(markerPath)).toBe(true);
@@ -153,7 +153,7 @@ describe('Mode Registry Integration', () => {
     });
 
     it('should detect active JSON-based mode', () => {
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(join(stateDir, 'autopilot-state.json'), JSON.stringify({
         active: true,
@@ -171,7 +171,7 @@ describe('Mode Registry Integration', () => {
     });
 
     it('should return false when JSON mode is inactive', () => {
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(join(stateDir, 'autopilot-state.json'), JSON.stringify({
         active: false,
@@ -188,7 +188,7 @@ describe('Mode Registry Integration', () => {
   describe('Stale marker detection', () => {
     it('should auto-remove stale markers older than 1 hour', () => {
       // Create marker with old timestamp (simulating stale marker)
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       const markerPath = join(stateDir, 'swarm-active.marker');
 
@@ -211,7 +211,7 @@ describe('Mode Registry Integration', () => {
     });
 
     it('should handle marker files without timestamp', () => {
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       const markerPath = join(stateDir, 'swarm-active.marker');
 

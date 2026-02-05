@@ -95,7 +95,7 @@ describe("Persistent Mode Session Isolation (Issue #311)", () => {
       sessionId: string,
       prompt: string,
     ): void {
-      const stateDir = join(dir, ".omc", "state");
+      const stateDir = join(dir, ".omb", "state");
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(
         join(stateDir, "ultrawork-state.json"),
@@ -141,7 +141,7 @@ describe("Persistent Mode Session Isolation (Issue #311)", () => {
     });
 
     it("should block for legacy state without session_id (backward compat)", () => {
-      const stateDir = join(tempDir, ".omc", "state");
+      const stateDir = join(tempDir, ".omb", "state");
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(
         join(stateDir, "ultrawork-state.json"),
@@ -198,7 +198,7 @@ describe("Persistent Mode Session Isolation (Issue #311)", () => {
     }
 
     it("should block when project_path matches current directory", () => {
-      const stateDir = join(tempDir, ".omc", "state");
+      const stateDir = join(tempDir, ".omb", "state");
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(
         join(stateDir, "ultrawork-state.json"),
@@ -227,7 +227,7 @@ describe("Persistent Mode Session Isolation (Issue #311)", () => {
     });
 
     it("should NOT block when project_path does not match current directory", () => {
-      const stateDir = join(tempDir, ".omc", "state");
+      const stateDir = join(tempDir, ".omb", "state");
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(
         join(stateDir, "ultrawork-state.json"),
@@ -256,7 +256,7 @@ describe("Persistent Mode Session Isolation (Issue #311)", () => {
     });
 
     it("should block for legacy local state without project_path (backward compat)", () => {
-      const stateDir = join(tempDir, ".omc", "state");
+      const stateDir = join(tempDir, ".omb", "state");
       mkdirSync(stateDir, { recursive: true });
       writeFileSync(
         join(stateDir, "ultrawork-state.json"),

@@ -27,6 +27,18 @@ try {
   // Notepad module not available - remember tags will be silently ignored
 }
 
+// Try to import bv-spawner functions (may fail if not built)
+const bvSpawnerDir = join(__dirname, '..', 'dist', 'hooks', 'bv-spawner');
+let processPendingRequests = null;
+let formatSpawnInstructions = null;
+try {
+  const bvModule = await import(join(bvSpawnerDir, 'index.js'));
+  processPendingRequests = bvModule.processPendingRequests;
+  formatSpawnInstructions = bvModule.formatSpawnInstructions;
+} catch {
+  // bv-spawner module not available - B-V cycle requests will be ignored
+}
+
 // State file for session tracking
 const STATE_FILE = join(homedir(), '.claude', '.session-stats.json');
 
@@ -204,7 +216,7 @@ function detectWriteFailure(output) {
 
 // Get agent completion summary from tracking state
 function getAgentCompletionSummary(directory) {
-  const trackingFile = join(directory, '.omc', 'state', 'subagent-tracking.json');
+  const trackingFile = join(directory, '.omb', 'state', 'subagent-tracking.json');
   try {
     if (existsSync(trackingFile)) {
       const data = JSON.parse(readFileSync(trackingFile, 'utf-8'));
@@ -332,9 +344,23 @@ async function main() {
     // Generate contextual message
     const message = generateMessage(toolName, toolOutput, sessionId, toolCount, directory);
 
+    // Check for pending B-V spawn requests
+    let bvMessage = '';
+    if (processPendingRequests && formatSpawnInstructions) {
+      try {
+        const instructions = processPendingRequests(directory);
+        if (instructions.length > 0) {
+          bvMessage = formatSpawnInstructions(instructions);
+        }
+      } catch {
+        // Silently fail - B-V spawner is optional
+      }
+    }
+
     // Build response - use hookSpecificOutput.additionalContext for PostToolUse
     const response = { continue: true };
-    const contextMessage = message;
+    // Combine tool message and B-V spawn instructions
+    const contextMessage = [message, bvMessage].filter(Boolean).join('\n\n---\n\n');
     if (contextMessage) {
       response.hookSpecificOutput = {
         hookEventName: 'PostToolUse',

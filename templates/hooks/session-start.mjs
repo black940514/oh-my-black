@@ -37,7 +37,7 @@ function writeJsonFile(path, data) {
 }
 
 async function checkForUpdates(currentVersion) {
-  const cacheFile = join(homedir(), '.omc', 'update-check.json');
+  const cacheFile = join(homedir(), '.omb', 'update-check.json');
   const now = Date.now();
   const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -102,10 +102,10 @@ const PRIORITY_HEADER = '## Priority Context';
 const WORKING_MEMORY_HEADER = '## Working Memory';
 
 /**
- * Get notepad path in .omc directory
+ * Get notepad path in .omb directory
  */
 function getNotepadPath(directory) {
-  return join(directory, '.omc', NOTEPAD_FILENAME);
+  return join(directory, '.omb', NOTEPAD_FILENAME);
 }
 
 /**
@@ -202,8 +202,8 @@ To update, run: claude /install-plugin oh-my-black
     }
 
     // Check for ultrawork state - only restore if session matches (issue #311)
-    const ultraworkState = readJsonFile(join(directory, '.omc', 'state', 'ultrawork-state.json'))
-      || readJsonFile(join(homedir(), '.omc', 'state', 'ultrawork-state.json'));
+    const ultraworkState = readJsonFile(join(directory, '.omb', 'state', 'ultrawork-state.json'))
+      || readJsonFile(join(homedir(), '.omb', 'state', 'ultrawork-state.json'));
 
     if (ultraworkState?.active && (!ultraworkState.session_id || ultraworkState.session_id === sessionId)) {
       messages.push(`<session-restore>
@@ -226,7 +226,7 @@ Continue working in ultrawork mode until all tasks are complete.
     // That directory accumulates todo files from ALL past sessions across all
     // projects, causing phantom task counts in fresh sessions (see issue #354).
     const localTodoPaths = [
-      join(directory, '.omc', 'todos.json'),
+      join(directory, '.omb', 'todos.json'),
       join(directory, '.claude', 'todos.json')
     ];
     let incompleteCount = 0;

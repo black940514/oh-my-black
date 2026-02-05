@@ -33,6 +33,7 @@ import {
   aggregateValidatorResults,
   runBuilderValidatorCycleWithAgentOutput
 } from './builder-validator.js';
+import { spawnBuilderAgent } from './agent-spawner.js';
 
 // ============================================================================
 // Types
@@ -275,6 +276,47 @@ export async function executeWithBVCycle(
               validatorResult
             );
             result.escalation = escalation;
+
+            // Generate failure report for escalation context
+            const failureReport = generateFailureReport(
+              config.taskId,
+              currentRetryState,
+              validatorResult
+            );
+
+            // Execute escalation - spawn architect agent
+            const architectResult = await executeEscalation(
+              escalation,
+              config,
+              currentRetryState,
+              failureReport
+            );
+
+            if (architectResult && architectResult.status === 'success') {
+              // Architect fixed it, re-run validation
+              const architectCycleResult = await runBuilderValidatorCycleWithAgentOutput(
+                architectResult,
+                config.validationType,
+                validationOptions
+              );
+
+              result.cycleResult = architectCycleResult;
+              result.evidence.push(...architectCycleResult.evidence);
+
+              if (architectCycleResult.success) {
+                // Architect's fix passed validation
+                currentRetryState = recordAttempt(
+                  currentRetryState,
+                  architectResult,
+                  undefined,
+                  'success'
+                );
+                result.success = true;
+                break;
+              }
+            }
+
+            // Escalation didn't resolve or architect output failed validation
             currentRetryState = recordAttempt(
               currentRetryState,
               builderResult,
@@ -325,10 +367,9 @@ export async function executeWithBVCycle(
 }
 
 /**
- * Execute builder phase (placeholder for actual agent spawning)
+ * Execute builder phase with real agent spawning
  *
- * In a real implementation, this would spawn the builder agent with the task.
- * For now, it creates a placeholder AgentOutput for testing.
+ * Spawns the builder agent with the task prompt and handles retry logic.
  */
 async function executeBuilder(
   config: BVTaskConfig,
@@ -357,28 +398,146 @@ async function executeBuilder(
     );
   }
 
-  // In real implementation: spawn agent with prompt
-  // For now, return a simulated success result
-  const result: AgentOutput = {
-    agentId: config.builderAgent,
-    taskId: config.taskId,
-    status: 'success',
-    summary: `Executed task: ${config.taskDescription}`,
-    evidence: [
-      {
-        type: 'command_output',
-        content: `Build successful for ${config.taskId}`,
-        passed: true
-      }
-    ],
-    timestamp: Date.now(),
-    selfValidation: {
-      passed: true,
-      retryCount: attempt
-    }
-  };
+  // Determine model based on builder agent type
+  const model = config.builderAgent.includes('high') ? 'opus'
+    : config.builderAgent.includes('low') ? 'haiku'
+    : 'sonnet';
 
-  return result;
+  // Spawn real builder agent
+  const spawnResult = await spawnBuilderAgent({
+    agentType: config.builderAgent,
+    model,
+    prompt,
+    taskId: config.taskId,
+    timeout: config.timeout
+  });
+
+  if (!spawnResult.success || !spawnResult.output) {
+    // Return a failed result if spawn failed
+    return {
+      agentId: config.builderAgent,
+      taskId: config.taskId,
+      status: 'failed',
+      summary: spawnResult.error || 'Builder agent spawn failed',
+      evidence: [],
+      timestamp: Date.now()
+    };
+  }
+
+  return spawnResult.output;
+}
+
+/**
+ * Execute escalation by spawning architect agent for review
+ *
+ * When validation failures persist after multiple retries, this function
+ * escalates to an architect agent who analyzes the root cause and either
+ * fixes the issue or provides specific guidance.
+ *
+ * @param escalation - Escalation decision with agent selection
+ * @param config - Task configuration
+ * @param retryState - Current retry state
+ * @param failureReport - Report of all failures
+ * @returns AgentOutput from architect if escalation succeeds, undefined otherwise
+ */
+async function executeEscalation(
+  escalation: EscalationDecision,
+  config: BVTaskConfig,
+  retryState: RetryState,
+  failureReport: FailureReport
+): Promise<AgentOutput | undefined> {
+  if (!escalation.shouldEscalate) {
+    return undefined;
+  }
+
+  // Create architect review prompt with full failure context
+  const escalationPrompt = `# ESCALATION REVIEW REQUEST
+
+You are reviewing a task that failed B-V validation after ${failureReport.totalAttempts} attempts.
+
+## Original Task
+${config.taskDescription}
+
+${config.requirements.length > 0 ? `## Requirements
+${config.requirements.map((req, i) => `${i + 1}. ${req}`).join('\n')}
+` : ''}
+
+${config.acceptanceCriteria.length > 0 ? `## Acceptance Criteria
+${config.acceptanceCriteria.map((crit, i) => `${i + 1}. ${crit}`).join('\n')}
+` : ''}
+
+## Failure History
+${retryState.history.map((attempt, i) => `
+**Attempt ${i + 1}:**
+- Builder Agent: ${attempt.builderResult?.agentId || 'unknown'}
+- Status: ${attempt.builderResult?.status || 'unknown'}
+- Issues: ${attempt.validatorResult?.issues.join('; ') || 'No validator feedback'}
+- Recommendations: ${attempt.validatorResult?.recommendations.join('; ') || 'None'}
+`).join('\n')}
+
+## Root Cause Analysis
+${failureReport.rootCauseAnalysis}
+
+## Persistent Issues
+${escalation.context.persistentIssues.length > 0 ? escalation.context.persistentIssues.map(p => `- ${p}`).join('\n') : 'No clear patterns detected'}
+
+## Suggested Action
+${escalation.context.suggestedAction}
+
+## Your Task
+
+1. **Analyze** why previous attempts failed despite validator feedback
+2. **Identify** the root cause (architectural issue, missing context, incorrect approach)
+3. **Either:**
+   - Fix the issue directly if it's straightforward
+   - Provide specific, actionable guidance for the builder agent
+
+4. **Ensure** all validators would pass after your changes
+
+## Output Requirements
+
+- If you make code changes, include all modified files
+- Provide evidence (test output, diagnostics) showing the fix works
+- If providing guidance, be specific about what needs to change and why
+
+Respond with your analysis and solution.
+`;
+
+  // Determine model and agent based on escalation level
+  let model: 'haiku' | 'sonnet' | 'opus';
+  let agentType: string;
+
+  switch (escalation.escalationLevel) {
+    case 'architect':
+      model = 'opus';
+      agentType = 'architect';
+      break;
+    case 'coordinator':
+      model = 'sonnet';
+      agentType = 'coordinator';
+      break;
+    case 'human':
+      // Cannot spawn human agent, return undefined
+      return undefined;
+    default:
+      model = 'sonnet';
+      agentType = 'architect';
+  }
+
+  // Spawn architect agent
+  const result = await spawnBuilderAgent({
+    agentType,
+    model,
+    prompt: escalationPrompt,
+    taskId: config.taskId,
+    timeout: 180000 // 3 minutes for architect review
+  });
+
+  if (!result.success || !result.output) {
+    return undefined;
+  }
+
+  return result.output;
 }
 
 /**

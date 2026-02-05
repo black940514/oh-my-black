@@ -53,8 +53,8 @@ describe('Notepad Module', () => {
       expect(content).toContain('Auto-managed by OMB');
     });
 
-    it('should create .omc directory if not exists', () => {
-      const omcDir = join(testDir, '.omc');
+    it('should create .omb directory if not exists', () => {
+      const omcDir = join(testDir, '.omb');
       expect(existsSync(omcDir)).toBe(false);
 
       initNotepad(testDir);
@@ -63,7 +63,7 @@ describe('Notepad Module', () => {
     });
 
     it('should not overwrite existing notepad', () => {
-      const omcDir = join(testDir, '.omc');
+      const omcDir = join(testDir, '.omb');
       mkdirSync(omcDir, { recursive: true });
       const notepadPath = getNotepadPath(testDir);
       const existingContent = '# Existing content\nTest data';

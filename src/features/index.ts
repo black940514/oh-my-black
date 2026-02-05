@@ -439,3 +439,29 @@ export {
   type TaskPromptOptions,
   type AgentPromptOptions
 } from './meta-prompt/index.js';
+
+// Wiring Audit - static analysis for unwired code detection
+export {
+  runWiringAudit,
+  formatWiringReport,
+  isWiringClean,
+  getIssuesByType,
+  getIssuesBySeverity,
+  getIssuesByFile,
+  // Types
+  type WiringAuditResult,
+  type WiringIssue,
+  type WiringIssueType,
+  type WiringAuditSummary,
+  type WiringAuditOptions
+} from './wiring-audit/index.js';
+
+// Wiring Audit Analyzers (direct re-export from analyzers)
+export {
+  detectPlaceholders,
+  hasPlaceholders,
+  detectUnusedExports,
+  checkRegistries as checkRegistryConsistency,
+  detectPathDrift,
+  suggestPathFix,
+} from './wiring-audit/analyzers/index.js';

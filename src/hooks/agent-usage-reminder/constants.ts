@@ -10,7 +10,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 
 /** Storage directory for agent usage reminder state */
-export const OMB_STORAGE_DIR = join(homedir(), '.omc');
+export const OMB_STORAGE_DIR = join(homedir(), '.omb');
 export const AGENT_USAGE_REMINDER_STORAGE = join(
   OMB_STORAGE_DIR,
   'agent-usage-reminder',

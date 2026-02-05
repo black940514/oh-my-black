@@ -94,6 +94,10 @@ export interface UltrapilotState {
   sessionId?: string;
   /** Project path for isolation */
   project_path?: string;
+  /** Last time this state was checked by persistent-mode hook */
+  last_checked_at?: string;
+  /** Reinforcement count for stop hook */
+  reinforcement_count?: number;
 }
 
 /**

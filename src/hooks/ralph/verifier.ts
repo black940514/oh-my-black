@@ -40,7 +40,7 @@ const DEFAULT_MAX_VERIFICATION_ATTEMPTS = 3;
  * Get verification state file path
  */
 function getVerificationStatePath(directory: string): string {
-  return join(directory, '.omc', 'ralph-verification.json');
+  return join(directory, '.omb', 'ralph-verification.json');
 }
 
 /**
@@ -63,7 +63,7 @@ export function readVerificationState(directory: string): VerificationState | nu
  */
 export function writeVerificationState(directory: string, state: VerificationState): boolean {
   const statePath = getVerificationStatePath(directory);
-  const stateDir = join(directory, '.omc');
+  const stateDir = join(directory, '.omb');
 
   if (!existsSync(stateDir)) {
     try {

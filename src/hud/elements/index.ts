@@ -19,3 +19,5 @@ export { renderAutopilot, renderAutopilotCompact, type AutopilotStateForHud } fr
 export { renderCwd } from './cwd.js';
 export { renderGitRepo, renderGitBranch, getGitRepoName, getGitBranch } from './git.js';
 export { renderModel, formatModelName } from './model.js';
+export { default as readinessHud, renderReadinessHud, formatScore, formatReadinessBar, getReadinessSummary } from './readiness.js';
+export { default as skepticHud, renderSkepticHud, formatHealth, formatTrend, getSkepticSummary } from './skeptic-status.js';

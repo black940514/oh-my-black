@@ -1206,8 +1206,8 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
     // Create a unique temp directory for each test
     testDir = join(tmpdir(), `omc-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     mkdirSync(testDir, { recursive: true });
-    mkdirSync(join(testDir, '.omc'), { recursive: true });
-    mkdirSync(join(testDir, '.omc', 'state'), { recursive: true });
+    mkdirSync(join(testDir, '.omb'), { recursive: true });
+    mkdirSync(join(testDir, '.omb', 'state'), { recursive: true });
   });
 
   afterEach(() => {
@@ -1225,19 +1225,19 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
     });
 
     it('should return true when ultraqa is active', () => {
-      const stateFile = join(testDir, '.omc', 'state', 'ultraqa-state.json');
+      const stateFile = join(testDir, '.omb', 'state', 'ultraqa-state.json');
       writeFileSync(stateFile, JSON.stringify({ active: true }));
       expect(isUltraQAActive(testDir)).toBe(true);
     });
 
     it('should return false when ultraqa is not active', () => {
-      const stateFile = join(testDir, '.omc', 'state', 'ultraqa-state.json');
+      const stateFile = join(testDir, '.omb', 'state', 'ultraqa-state.json');
       writeFileSync(stateFile, JSON.stringify({ active: false }));
       expect(isUltraQAActive(testDir)).toBe(false);
     });
 
     it('should return false for invalid JSON', () => {
-      const stateFile = join(testDir, '.omc', 'state', 'ultraqa-state.json');
+      const stateFile = join(testDir, '.omb', 'state', 'ultraqa-state.json');
       writeFileSync(stateFile, 'invalid json');
       expect(isUltraQAActive(testDir)).toBe(false);
     });
@@ -1249,13 +1249,13 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
     });
 
     it('should return true when ralph is active', () => {
-      const stateFile = join(testDir, '.omc', 'state', 'ralph-state.json');
+      const stateFile = join(testDir, '.omb', 'state', 'ralph-state.json');
       writeFileSync(stateFile, JSON.stringify({ active: true }));
       expect(isRalphLoopActive(testDir)).toBe(true);
     });
 
     it('should return false when ralph is not active', () => {
-      const stateFile = join(testDir, '.omc', 'state', 'ralph-state.json');
+      const stateFile = join(testDir, '.omb', 'state', 'ralph-state.json');
       writeFileSync(stateFile, JSON.stringify({ active: false }));
       expect(isRalphLoopActive(testDir)).toBe(false);
     });
@@ -1264,7 +1264,7 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
   describe('UltraQA mutual exclusion', () => {
     it('should fail to start UltraQA when Ralph is active', () => {
       // Activate Ralph first
-      const ralphStateFile = join(testDir, '.omc', 'state', 'ralph-state.json');
+      const ralphStateFile = join(testDir, '.omb', 'state', 'ralph-state.json');
       writeFileSync(ralphStateFile, JSON.stringify({ active: true }));
 
       // Try to start UltraQA
@@ -1285,7 +1285,7 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
     });
 
     it('should succeed starting UltraQA when ralph state exists but inactive', () => {
-      const ralphStateFile = join(testDir, '.omc', 'state', 'ralph-state.json');
+      const ralphStateFile = join(testDir, '.omb', 'state', 'ralph-state.json');
       writeFileSync(ralphStateFile, JSON.stringify({ active: false }));
 
       const result = startUltraQA(testDir, 'tests', 'test-session');
@@ -1300,7 +1300,7 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
   describe('Ralph mutual exclusion', () => {
     it('should fail to start Ralph when UltraQA is active', () => {
       // Activate UltraQA first
-      const ultraqaStateFile = join(testDir, '.omc', 'state', 'ultraqa-state.json');
+      const ultraqaStateFile = join(testDir, '.omb', 'state', 'ultraqa-state.json');
       writeFileSync(ultraqaStateFile, JSON.stringify({ active: true }));
 
       // Try to start Ralph
@@ -1321,7 +1321,7 @@ describe('Mutual Exclusion - UltraQA and Ralph', () => {
     });
 
     it('should succeed starting Ralph when ultraqa state exists but inactive', () => {
-      const ultraqaStateFile = join(testDir, '.omc', 'state', 'ultraqa-state.json');
+      const ultraqaStateFile = join(testDir, '.omb', 'state', 'ultraqa-state.json');
       writeFileSync(ultraqaStateFile, JSON.stringify({ active: false }));
 
       const hook = createRalphLoopHook(testDir);

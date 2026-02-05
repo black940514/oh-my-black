@@ -846,3 +846,22 @@ export {
   type UserDirective
 } from './project-memory/index.js';
 
+export {
+  // B-V Spawner Hook
+  processPendingRequests,
+  formatSpawnInstructions,
+  cleanupOldRequests,
+  type BVSpawnInstruction,
+  type SpawnRequest,
+  type SpawnResponse
+} from './bv-spawner/index.js';
+
+export {
+  // Wiring Check Hook
+  createWiringCheckHook,
+  runWiringCheck,
+  DEFAULT_WIRING_CHECK_CONFIG,
+  type WiringCheckHookConfig,
+  type WiringCheckResult
+} from './wiring-check/index.js';
+

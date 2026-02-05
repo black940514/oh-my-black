@@ -32,7 +32,7 @@ process.stdin.on('end', async () => {
 
 async function optimizeContext(hookInput) {
   const cwd = hookInput.cwd || process.cwd();
-  const omcDir = join(cwd, '.omc');
+  const omcDir = join(cwd, '.omb');
 
   // Configuration
   const config = {

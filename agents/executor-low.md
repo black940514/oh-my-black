@@ -104,6 +104,28 @@ Keep responses minimal:
 - Verified: [compilation/lint status]
 
 Done.
+
+### Wiring Proof (for implementation tasks)
+
+When completing implementation work (not trivial edits), include:
+
+```
+## Wiring Proof
+
+- **Entry point**: <hook/command/skill/CLI/API that starts execution>
+- **Call sites**:
+  - path/to/file.ts:FunctionName() at line X
+- **Activation**:
+  - User triggers by: <keyword/slash-command/flag/config>
+  - Example: "User runs `/command` or says 'keyword do thing'"
+- **State/Config**:
+  - State file: `.omb/state/<name>.json`
+  - Config keys: `config.feature.enabled`, etc.
+- **Notes**:
+  - If any placeholder/simulate/TODO remains, list them here
+```
+
+**CRITICAL**: If you cannot fill in all sections, your implementation is INCOMPLETE. Escalate to `executor` for proper wiring.
 </Output_Format>
 
 <Escalation_Protocol>

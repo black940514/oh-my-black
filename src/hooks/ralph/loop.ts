@@ -40,7 +40,7 @@ import {
 
 // Forward declaration to avoid circular import - check ultraqa state file directly
 export function isUltraQAActive(directory: string): boolean {
-  const omcDir = join(directory, ".omc");
+  const omcDir = join(directory, ".omb");
   const stateFile = join(omcDir, "state", "ultraqa-state.json");
   if (!existsSync(stateFile)) {
     return false;
@@ -69,6 +69,8 @@ export interface RalphLoopState {
   session_id?: string;
   /** Project path for isolation */
   project_path?: string;
+  /** Last time this state was checked by persistent-mode hook */
+  last_checked_at?: string;
   /** Whether PRD mode is active */
   prd_mode?: boolean;
   /** Current story being worked on */
@@ -100,15 +102,15 @@ const DEFAULT_MAX_ITERATIONS = 10;
  * Get the state file path for Ralph Loop
  */
 function getStateFilePath(directory: string): string {
-  const omcDir = join(directory, ".omc");
+  const omcDir = join(directory, ".omb");
   return join(omcDir, "state", "ralph-state.json");
 }
 
 /**
- * Ensure the .omc directory exists
+ * Ensure the .omb directory exists
  */
 function ensureStateDir(directory: string): void {
-  const stateDir = join(directory, ".omc", "state");
+  const stateDir = join(directory, ".omb", "state");
   if (!existsSync(stateDir)) {
     mkdirSync(stateDir, { recursive: true });
   }
@@ -179,7 +181,7 @@ export function clearLinkedUltraworkState(directory: string): boolean {
     return true;
   }
 
-  const omcDir = join(directory, ".omc");
+  const omcDir = join(directory, ".omb");
   const stateFile = join(omcDir, "state", "ultrawork-state.json");
   try {
     unlinkSync(stateFile);
@@ -236,7 +238,7 @@ export function createRalphLoopHook(directory: string): RalphLoopHook {
       max_iterations: options?.maxIterations ?? DEFAULT_MAX_ITERATIONS,
       started_at: now,
       prompt,
-      session_id: sessionId,
+      session_id: sessionId || `ralph-${Date.now()}`,
       project_path: directory,
       linked_ultrawork: enableUltrawork,
     };

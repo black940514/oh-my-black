@@ -66,14 +66,14 @@ export function getProgressPath(directory: string): string {
 }
 
 /**
- * Get the path to progress.txt in .omc subdirectory
+ * Get the path to progress.txt in .omb subdirectory
  */
 export function getOmcProgressPath(directory: string): string {
-  return join(directory, '.omc', PROGRESS_FILENAME);
+  return join(directory, '.omb', PROGRESS_FILENAME);
 }
 
 /**
- * Find progress.txt in a directory (checks both root and .omc)
+ * Find progress.txt in a directory (checks both root and .omb)
  */
 export function findProgressPath(directory: string): string | null {
   const rootPath = getProgressPath(directory);
@@ -225,7 +225,7 @@ export function readProgress(directory: string): ProgressLog | null {
  * Initialize a new progress.txt file
  */
 export function initProgress(directory: string): boolean {
-  const omcDir = join(directory, '.omc');
+  const omcDir = join(directory, '.omb');
   if (!existsSync(omcDir)) {
     try {
       mkdirSync(omcDir, { recursive: true });

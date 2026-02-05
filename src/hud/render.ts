@@ -22,6 +22,8 @@ import { renderAutopilot } from './elements/autopilot.js';
 import { renderCwd } from './elements/cwd.js';
 import { renderGitRepo, renderGitBranch } from './elements/git.js';
 import { renderModel } from './elements/model.js';
+import { renderReadinessHud } from './elements/readiness.js';
+import { renderSkepticHud } from './elements/skeptic-status.js';
 import {
   getAnalyticsDisplay,
   renderAnalyticsLineWithConfig,
@@ -158,7 +160,7 @@ export async function render(context: HudRenderContext, config: HudConfig): Prom
   }
 
   // [OMB] label
-  if (enabledElements.omcLabel) {
+  if (enabledElements.ombLabel) {
     elements.push(bold('[OMB]'));
   }
 
@@ -261,6 +263,18 @@ export async function render(context: HudRenderContext, config: HudConfig): Prom
   if (enabledElements.backgroundTasks) {
     const bg = renderBackground(context.backgroundTasks);
     if (bg) elements.push(bg);
+  }
+
+  // Quality Gradient readiness
+  if (enabledElements.readiness) {
+    const readiness = renderReadinessHud({ colorize: !enabledElements.safeMode });
+    if (readiness) elements.push(readiness);
+  }
+
+  // Skeptic validation health
+  if (enabledElements.skepticStatus) {
+    const skeptic = renderSkepticHud({ colorize: !enabledElements.safeMode });
+    if (skeptic) elements.push(skeptic);
   }
 
   // Compose output

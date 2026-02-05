@@ -2,8 +2,8 @@
  * Configuration Loader
  *
  * Handles loading and merging configuration from multiple sources:
- * - User config: ~/.config/claude-sisyphus/config.jsonc
- * - Project config: .claude/sisyphus.jsonc
+ * - User config: ~/.config/oh-my-black/config.jsonc (or legacy ~/.config/claude-sisyphus/config.jsonc)
+ * - Project config: .claude/omb.jsonc (or legacy .claude/sisyphus.jsonc)
  * - Environment variables
  */
 
@@ -18,7 +18,7 @@ import type { PluginConfig } from '../shared/types.js';
  */
 export const DEFAULT_CONFIG: PluginConfig = {
   agents: {
-    omc: { model: 'claude-opus-4-5-20251101' },
+    omb: { model: 'claude-opus-4-5-20251101' },
     architect: { model: 'claude-opus-4-5-20251101', enabled: true },
     researcher: { model: 'claude-sonnet-4-5-20250929' },
     explore: { model: 'claude-haiku-4-5-20251001' },
@@ -86,13 +86,16 @@ export const DEFAULT_CONFIG: PluginConfig = {
 
 /**
  * Configuration file locations
+ * Returns new paths, with legacy paths for backward compatibility
  */
-export function getConfigPaths(): { user: string; project: string } {
+export function getConfigPaths(): { user: string; project: string; userLegacy: string; projectLegacy: string } {
   const userConfigDir = process.env.XDG_CONFIG_HOME ?? join(homedir(), '.config');
 
   return {
-    user: join(userConfigDir, 'claude-sisyphus', 'config.jsonc'),
-    project: join(process.cwd(), '.claude', 'sisyphus.jsonc')
+    user: join(userConfigDir, 'oh-my-black', 'config.jsonc'),
+    project: join(process.cwd(), '.claude', 'omb.jsonc'),
+    userLegacy: join(userConfigDir, 'claude-sisyphus', 'config.jsonc'),
+    projectLegacy: join(process.cwd(), '.claude', 'sisyphus.jsonc')
   };
 }
 
@@ -223,6 +226,7 @@ export function loadEnvConfig(): Partial<PluginConfig> {
 
 /**
  * Load and merge all configuration sources
+ * Supports both new (oh-my-black/omb) and legacy (claude-sisyphus/sisyphus) paths
  */
 export function loadConfig(): PluginConfig {
   const paths = getConfigPaths();
@@ -230,14 +234,14 @@ export function loadConfig(): PluginConfig {
   // Start with defaults
   let config = { ...DEFAULT_CONFIG };
 
-  // Merge user config
-  const userConfig = loadJsoncFile(paths.user);
+  // Merge user config (new path, then legacy)
+  const userConfig = loadJsoncFile(paths.user) ?? loadJsoncFile(paths.userLegacy);
   if (userConfig) {
     config = deepMerge(config, userConfig);
   }
 
-  // Merge project config (takes precedence over user)
-  const projectConfig = loadJsoncFile(paths.project);
+  // Merge project config (takes precedence over user) (new path, then legacy)
+  const projectConfig = loadJsoncFile(paths.project) ?? loadJsoncFile(paths.projectLegacy);
   if (projectConfig) {
     config = deepMerge(config, projectConfig);
   }

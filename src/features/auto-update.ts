@@ -24,7 +24,7 @@ export const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/$
 
 /** Installation paths */
 export const CLAUDE_CONFIG_DIR = join(homedir(), '.claude');
-export const VERSION_FILE = join(CLAUDE_CONFIG_DIR, '.omc-version.json');
+export const VERSION_FILE = join(CLAUDE_CONFIG_DIR, '.omb-version.json');
 export const CONFIG_FILE = join(CLAUDE_CONFIG_DIR, '.omb-config.json');
 
 /**
@@ -554,7 +554,7 @@ export interface SilentUpdateConfig {
 }
 
 /** State file for tracking silent update status */
-const SILENT_UPDATE_STATE_FILE = join(CLAUDE_CONFIG_DIR, '.omc-silent-update.json');
+const SILENT_UPDATE_STATE_FILE = join(CLAUDE_CONFIG_DIR, '.omb-silent-update.json');
 
 interface SilentUpdateState {
   lastAttempt?: string;
@@ -629,7 +629,7 @@ export async function silentAutoUpdate(config: SilentUpdateConfig = {}): Promise
   const {
     checkIntervalHours = 24,
     autoApply = true,
-    logFile = join(CLAUDE_CONFIG_DIR, '.omc-update.log'),
+    logFile = join(CLAUDE_CONFIG_DIR, '.omb-update.log'),
     maxRetries = 3
   } = config;
 

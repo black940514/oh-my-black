@@ -13,7 +13,7 @@ import { homedir } from "os";
 
 const TOKEN_LOG_FILE = path.join(
   homedir(),
-  ".omc",
+  ".omb",
   "state",
   "token-tracking.jsonl",
 );
@@ -26,7 +26,7 @@ interface SessionIndex {
 
 const SESSION_INDEX_FILE = path.join(
   homedir(),
-  ".omc",
+  ".omb",
   "state",
   "token-tracking-index.json",
 );

@@ -96,6 +96,10 @@ export interface AutopilotExecution {
   files_modified: string[];
   /** Timestamp when ralph marked execution as complete */
   ralph_completed_at?: string;
+  /** Whether workflow execution is active (ohmyblack mode) */
+  workflow_active?: boolean;
+  /** Workflow ID for tracking (ohmyblack mode) */
+  workflow_id?: string;
 }
 
 /**
@@ -162,6 +166,12 @@ export interface AutopilotState {
   session_id?: string;
   /** Project path for isolation */
   project_path?: string;
+  /** Last time this state was checked by persistent-mode hook */
+  last_checked_at?: string;
+  /** Reinforcement count for stop hook */
+  reinforcement_count?: number;
+  /** Team composition (when ohmyblack mode is enabled) */
+  teamComposition?: import('../../features/team/auto-composer.js').CompositionResult;
 }
 
 /**
@@ -192,6 +202,17 @@ export interface AutopilotConfig {
   autoCommit?: boolean;
   /** Types of validation to perform */
   validationArchitects?: ValidationVerdictType[];
+  /** ohmyblack integration settings */
+  ohmyblack?: {
+    /** Enable ohmyblack enhanced orchestration */
+    enabled?: boolean;
+    /** Enable automatic team composition */
+    autoTeamComposition?: boolean;
+    /** Default validation level for Builder-Validator cycles */
+    defaultValidationLevel?: 'self-only' | 'validator' | 'architect';
+    /** Use meta-prompt templates for consistent prompts */
+    useMetaPrompts?: boolean;
+  };
 }
 
 /**

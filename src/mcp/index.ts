@@ -16,7 +16,7 @@ export type { McpServerConfig, McpServersConfig } from './servers.js';
 
 // OMB Tools Server - in-process MCP server for custom tools
 export {
-  omcToolsServer,
-  omcToolNames,
-  getOmcToolNames
+  ombToolsServer,
+  ombToolNames,
+  getOmbToolNames
 } from './omb-tools-server.js';

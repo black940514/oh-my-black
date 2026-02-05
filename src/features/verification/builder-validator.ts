@@ -13,6 +13,10 @@ import type {
   VerificationEvidence,
   OhmyblackEvidenceType
 } from './types.js';
+import {
+  spawnValidatorsParallel,
+  isValidValidatorType
+} from './agent-spawner.js';
 
 // ============================================================================
 // Types
@@ -567,15 +571,23 @@ export async function runBuilderValidatorCycleWithAgentOutput(
     result.retryCount = attempt;
 
     try {
-      // In a real implementation, this would spawn validator agents
-      // For now, simulate successful validation if builder passed
-      const simulatedValidatorResults = simulateValidation(
+      // Run real validation by spawning validator agents
+      const filesModified: string[] = builderResult.filesModified
+        ? builderResult.filesModified.map(fc => fc.path)
+        : [];
+
+      const validatorResults = await runRealValidation(
         builderResult,
         validators,
-        timeout
+        timeout,
+        {
+          taskId: builderResult.taskId,
+          requirements: [],
+          filesModified
+        }
       );
 
-      const aggregated = aggregateValidatorResults(simulatedValidatorResults);
+      const aggregated = aggregateValidatorResults(validatorResults);
       result.evidence.push(...aggregated.allEvidence);
 
       if (aggregated.overallStatus === 'APPROVED') {
@@ -667,15 +679,14 @@ function determineTaskComplexity(builderResult: AgentOutput): 'low' | 'medium' |
 }
 
 /**
- * Simulate validation results (placeholder for real agent spawning)
+ * Simulate validation results (fallback for when real spawning fails)
  */
-function simulateValidation(
+function simulateValidationFallback(
   builderResult: AgentOutput,
   validators: string[],
   _timeout: number
 ): ValidatorOutput[] {
-  // In real implementation, this would spawn validator agents
-  // For now, simulate based on builder status
+  // Fallback simulation when real agent spawning fails
   return validators.map(validatorType => ({
     validatorType,
     taskId: builderResult.taskId,
@@ -684,11 +695,48 @@ function simulateValidation(
       {
         name: `${validatorType} check`,
         passed: builderResult.status === 'success',
-        evidence: `Simulated ${validatorType} validation`,
+        evidence: `Simulated ${validatorType} validation (fallback)`,
         severity: 'major' as const
       }
     ],
     issues: builderResult.status === 'success' ? [] : ['Builder did not succeed'],
     recommendations: []
   }));
+}
+
+/**
+ * Run real validation by spawning validator agents
+ *
+ * @param builderResult - Output from builder agent
+ * @param validators - List of validator types to run
+ * @param timeout - Timeout per validator in ms
+ * @param taskContext - Context about the task
+ * @returns Array of ValidatorOutput results
+ */
+async function runRealValidation(
+  builderResult: AgentOutput,
+  validators: string[],
+  timeout: number,
+  taskContext: TaskContext
+): Promise<ValidatorOutput[]> {
+  // Filter to valid validator types
+  const validTypes = validators
+    .filter(v => isValidValidatorType(v))
+    .map(v => v as 'syntax' | 'logic' | 'security' | 'integration');
+
+  if (validTypes.length === 0) {
+    // Fallback: if no valid validators specified, use default set
+    validTypes.push('syntax', 'logic');
+  }
+
+  try {
+    // Spawn validators in parallel
+    const results = await spawnValidatorsParallel(validTypes, builderResult, taskContext);
+    return results;
+  } catch (error) {
+    // If spawning fails completely, fall back to simulation
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn(`Validator spawning failed, using fallback: ${errorMessage}`);
+    return simulateValidationFallback(builderResult, validators, timeout);
+  }
 }

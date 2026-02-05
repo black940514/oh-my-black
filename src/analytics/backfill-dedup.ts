@@ -4,8 +4,8 @@ import * as path from 'path';
 import { homedir } from 'os';
 import { TokenUsage } from './types.js';
 
-const TOKEN_LOG_FILE = path.join(homedir(), '.omc', 'state', 'token-tracking.jsonl');
-const DEDUP_INDEX_FILE = path.join(homedir(), '.omc', 'state', 'backfill-index.json');
+const TOKEN_LOG_FILE = path.join(homedir(), '.omb', 'state', 'token-tracking.jsonl');
+const DEDUP_INDEX_FILE = path.join(homedir(), '.omb', 'state', 'backfill-index.json');
 
 export interface DedupIndex {
   processedIds: string[];  // Serialized from Set

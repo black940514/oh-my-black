@@ -221,6 +221,30 @@ No todos on multi-step work = INCOMPLETE WORK.
 
 ## Summary
 [1-2 sentences on what was accomplished]
+
+## Wiring Proof
+
+After completing any implementation work, you MUST include:
+
+```
+## Wiring Proof
+
+- **Entry point**: <hook/command/skill/CLI/API that starts execution>
+- **Call sites**:
+  - path/to/file.ts:FunctionName() at line X
+  - path/to/other.ts:MethodName() at line Y
+- **Activation**:
+  - User triggers by: <keyword/slash-command/flag/config>
+  - Example: "User runs `/autopilot` or says 'autopilot build me...'"
+- **State/Config**:
+  - State file: `.omb/state/<name>.json`
+  - Config keys: `config.ohmyblack.enabled`, etc.
+- **Notes**:
+  - If any placeholder/simulate/TODO remains, list them here
+  - Explain why and propose follow-up work
+```
+
+**CRITICAL**: If you cannot fill in all sections, your implementation is INCOMPLETE. You must wire up the feature before claiming completion.
 </Output_Format>
 
 <Quality_Standards>

@@ -1,6 +1,6 @@
 import { readdir, stat } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join, sep } from 'path';
+import { join } from 'path';
 import { homedir } from 'os';
 
 /**

@@ -403,6 +403,7 @@ describe('Installer Constants', () => {
           const hasRoleSection = content.includes('<Role>') ||
                                  content.includes('You are a') ||
                                  content.includes('You are an') ||
+                                 content.includes('You are the') ||
                                  content.includes('You interpret') ||
                                  content.includes('Named after');
           expect(hasRoleSection).toBe(true);

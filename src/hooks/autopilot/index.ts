@@ -48,6 +48,7 @@ export {
   transitionToComplete,
   transitionToFailed,
   getTransitionPrompt,
+  startExecutionWithWorkflow,
   type TransitionResult
 } from './state.js';
 
@@ -96,3 +97,24 @@ export {
   checkAutopilot,
   type AutopilotEnforcementResult
 } from './enforcement.js';
+
+// Team integration (ohmyblack)
+export {
+  shouldUseTeamComposition,
+  composeTeamForAutopilot,
+  getTeamFromState
+} from './team-integration.js';
+
+// Workflow integration
+// Note: For ohmyblack B-V cycle support, import directly from skills/autopilot/ohmyblack-integration.ts
+// See workflow-integration.ts documentation for available functions and usage examples
+export {
+  shouldUseWorkflowExecution,
+  createAutopilotWorkflow,
+  executeAutopilotWorkflow,
+  pauseAutopilotWorkflow,
+  resumeAutopilotWorkflow,
+  cancelAutopilotWorkflow,
+  getWorkflowProgress,
+  createAutopilotExecutionContext
+} from './workflow-integration.js';

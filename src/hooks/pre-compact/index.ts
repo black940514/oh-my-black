@@ -75,7 +75,7 @@ const CHECKPOINT_DIR = "checkpoints";
  * Get the checkpoint directory path
  */
 export function getCheckpointPath(directory: string): string {
-  const checkpointDir = join(directory, ".omc", "state", CHECKPOINT_DIR);
+  const checkpointDir = join(directory, ".omb", "state", CHECKPOINT_DIR);
   if (!existsSync(checkpointDir)) {
     mkdirSync(checkpointDir, { recursive: true });
   }
@@ -88,7 +88,7 @@ export function getCheckpointPath(directory: string): string {
 export async function exportWisdomToNotepad(
   directory: string,
 ): Promise<{ wisdom: string; exported: boolean }> {
-  const notepadsDir = join(directory, ".omc", "notepads");
+  const notepadsDir = join(directory, ".omb", "notepads");
 
   if (!existsSync(notepadsDir)) {
     return { wisdom: "", exported: false };
@@ -142,7 +142,7 @@ export async function exportWisdomToNotepad(
 export async function saveModeSummary(
   directory: string,
 ): Promise<Record<string, unknown>> {
-  const stateDir = join(directory, ".omc", "state");
+  const stateDir = join(directory, ".omb", "state");
   const modes: Record<string, unknown> = {};
 
   const stateFiles = [
@@ -261,7 +261,7 @@ function readTodoSummary(directory: string): {
 } {
   const todoPaths = [
     join(directory, ".claude", "todos.json"),
-    join(directory, ".omc", "state", "todos.json"),
+    join(directory, ".omb", "state", "todos.json"),
   ];
 
   for (const todoPath of todoPaths) {

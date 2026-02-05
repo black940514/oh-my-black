@@ -39,13 +39,13 @@ import { join } from "node:path";
 async function main() {
   const home = homedir();
 
-  // 1. Try plugin cache first (marketplace: omc, plugin: oh-my-black)
-  const pluginCacheBase = join(home, ".claude/plugins/cache/omc/oh-my-black");
+  // 1. Try plugin cache first (marketplace: omb, plugin: oh-my-black)
+  const pluginCacheBase = join(home, ".claude/plugins/cache/omb/oh-my-black");
   if (existsSync(pluginCacheBase)) {
     try {
-      const versions = readdirSync(pluginCacheBase);
+      const versions = readdirSync(pluginCacheBase).filter(v => /^\d+\.\d+\.\d+/.test(v));
       if (versions.length > 0) {
-        const latestVersion = versions.sort().reverse()[0];
+        const latestVersion = versions.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).reverse()[0];
         const pluginPath = join(pluginCacheBase, latestVersion, "dist/hud/index.js");
         if (existsSync(pluginPath)) {
           await import(pluginPath);

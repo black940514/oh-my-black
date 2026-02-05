@@ -68,7 +68,7 @@ const sessionStartTimes = new Map<string, number>();
  * Get the replay file path for a session
  */
 export function getReplayFilePath(directory: string, sessionId: string): string {
-  const stateDir = join(directory, '.omc', 'state');
+  const stateDir = join(directory, '.omb', 'state');
   if (!existsSync(stateDir)) {
     mkdirSync(stateDir, { recursive: true });
   }
@@ -346,7 +346,7 @@ export function getReplaySummary(directory: string, sessionId: string): ReplaySu
  * Clean up old replay files, keeping only the most recent ones
  */
 export function cleanupReplayFiles(directory: string): number {
-  const stateDir = join(directory, '.omc', 'state');
+  const stateDir = join(directory, '.omb', 'state');
   if (!existsSync(stateDir)) return 0;
 
   try {

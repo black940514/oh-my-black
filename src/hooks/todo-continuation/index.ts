@@ -194,7 +194,7 @@ function getTodoFilePaths(sessionId?: string, directory?: string): string[] {
 
   // Project-specific todos
   if (directory) {
-    paths.push(join(directory, '.omc', 'todos.json'));
+    paths.push(join(directory, '.omb', 'todos.json'));
     paths.push(join(directory, '.claude', 'todos.json'));
   }
 

@@ -9,10 +9,10 @@ import { homedir } from 'os';
 export const USER_SKILLS_DIR = join(homedir(), '.claude', 'skills', 'omc-learned');
 
 /** Global skills directory (new preferred location: ~/.omb/skills) */
-export const GLOBAL_SKILLS_DIR = join(homedir(), '.omc', 'skills');
+export const GLOBAL_SKILLS_DIR = join(homedir(), '.omb', 'skills');
 
 /** Project-level skills subdirectory */
-export const PROJECT_SKILLS_SUBDIR = join('.omc', 'skills');
+export const PROJECT_SKILLS_SUBDIR = join('.omb', 'skills');
 
 /** Maximum recursion depth for skill file discovery */
 export const MAX_RECURSION_DEPTH = 10;

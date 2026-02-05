@@ -83,6 +83,14 @@ export const STANDARD_CHECKS = {
     evidenceType: 'error_free' as VerificationEvidenceType,
     required: true,
     completed: false
+  },
+  WIRING_PROOF: {
+    id: 'wiring_proof',
+    name: 'Wiring Proof',
+    description: 'Code is properly wired with entry points, call sites, and activation',
+    evidenceType: 'wiring_proof' as VerificationEvidenceType,
+    required: true,
+    completed: false
   }
 };
 
@@ -586,3 +594,24 @@ export type {
   BVTaskState,
   BVReportSummary
 } from './bv-integration.js';
+
+// Re-export agent spawner utilities
+export {
+  spawnBuilderAgent,
+  spawnValidatorAgent,
+  spawnValidatorsParallel,
+  parseValidatorResponse,
+  getValidatorConfig,
+  getValidatorTypes,
+  isValidValidatorType,
+  BV_REQUEST_DIR,
+  BV_RESPONSE_DIR,
+  DEFAULT_TIMEOUT,
+  VALIDATOR_AGENTS
+} from './agent-spawner.js';
+export type {
+  SpawnOptions,
+  SpawnResult,
+  SpawnRequest,
+  SpawnResponse
+} from './agent-spawner.js';

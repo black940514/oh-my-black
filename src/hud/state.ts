@@ -21,7 +21,7 @@ import { cleanupStaleBackgroundTasks, markOrphanedTasksAsStale } from './backgro
  */
 function getLocalStateFilePath(directory?: string): string {
   const baseDir = directory || process.cwd();
-  const omcStateDir = join(baseDir, '.omc', 'state');
+  const omcStateDir = join(baseDir, '.omb', 'state');
   return join(omcStateDir, 'hud-state.json');
 }
 
@@ -37,7 +37,7 @@ function getSettingsFilePath(): string {
  * Get the HUD config file path (legacy)
  */
 function getConfigFilePath(): string {
-  return join(homedir(), '.claude', '.omc', 'hud-config.json');
+  return join(homedir(), '.claude', '.omb', 'hud-config.json');
 }
 
 /**
@@ -45,7 +45,7 @@ function getConfigFilePath(): string {
  */
 function ensureStateDir(directory?: string): void {
   const baseDir = directory || process.cwd();
-  const omcStateDir = join(baseDir, '.omc', 'state');
+  const omcStateDir = join(baseDir, '.omb', 'state');
   if (!existsSync(omcStateDir)) {
     mkdirSync(omcStateDir, { recursive: true });
   }
@@ -74,7 +74,7 @@ export function readHudState(directory?: string): OmcHudState | null {
 
   // Check legacy local state (.omb/hud-state.json)
   const baseDir = directory || process.cwd();
-  const legacyStateFile = join(baseDir, '.omc', 'hud-state.json');
+  const legacyStateFile = join(baseDir, '.omb', 'hud-state.json');
   if (existsSync(legacyStateFile)) {
     try {
       const content = readFileSync(legacyStateFile, 'utf-8');
@@ -153,8 +153,8 @@ export function readHudConfig(): HudConfig {
     try {
       const content = readFileSync(settingsFile, 'utf-8');
       const settings = JSON.parse(content);
-      if (settings.omcHud) {
-        const config = settings.omcHud as Partial<HudConfig>;
+      if (settings.ombHud) {
+        const config = settings.ombHud as Partial<HudConfig>;
         return mergeWithDefaults(config);
       }
     } catch {
@@ -211,7 +211,7 @@ export function writeHudConfig(config: HudConfig): boolean {
     }
 
     // Update omcHud key
-    settings.omcHud = config;
+    settings.ombHud = config;
     writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
     return true;
   } catch {

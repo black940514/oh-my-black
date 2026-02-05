@@ -113,7 +113,7 @@ let policyLoadedFrom: string | null = null;
 
 function loadSecurityPolicy(): SecurityPolicy {
   const policyPaths = [
-    join(process.cwd(), ".omc", "config", "live-data-policy.json"),
+    join(process.cwd(), ".omb", "config", "live-data-policy.json"),
     join(process.cwd(), ".claude", "live-data-policy.json"),
   ];
 

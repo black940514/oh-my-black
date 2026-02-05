@@ -68,7 +68,7 @@ export function isSafeCommand(command: string): boolean {
  * Check if an active mode (autopilot/ultrawork/ralph/swarm) is running
  */
 export function isActiveModeRunning(directory: string): boolean {
-  const stateDir = path.join(directory, '.omc', 'state');
+  const stateDir = path.join(directory, '.omb', 'state');
 
   if (!fs.existsSync(stateDir)) {
     return false;

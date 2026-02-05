@@ -39,9 +39,9 @@ const DEFAULT_CONFIG: Required<DaemonConfig> = {
   pollIntervalMs: 60 * 1000, // 1 minute
   paneLinesToCapture: 15,
   verbose: false,
-  stateFilePath: join(homedir(), '.omc', 'state', 'rate-limit-daemon.json'),
-  pidFilePath: join(homedir(), '.omc', 'state', 'rate-limit-daemon.pid'),
-  logFilePath: join(homedir(), '.omc', 'state', 'rate-limit-daemon.log'),
+  stateFilePath: join(homedir(), '.omb', 'state', 'rate-limit-daemon.json'),
+  pidFilePath: join(homedir(), '.omb', 'state', 'rate-limit-daemon.pid'),
+  logFilePath: join(homedir(), '.omb', 'state', 'rate-limit-daemon.log'),
 };
 
 /** Maximum log file size before rotation (1MB) */

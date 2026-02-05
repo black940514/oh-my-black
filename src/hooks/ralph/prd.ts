@@ -81,14 +81,14 @@ export function getPrdPath(directory: string): string {
 }
 
 /**
- * Get the path to the prd.json in .omc subdirectory
+ * Get the path to the prd.json in .omb subdirectory
  */
 export function getOmcPrdPath(directory: string): string {
-  return join(directory, '.omc', PRD_FILENAME);
+  return join(directory, '.omb', PRD_FILENAME);
 }
 
 /**
- * Find prd.json in a directory (checks both root and .omc)
+ * Find prd.json in a directory (checks both root and .omb)
  */
 export function findPrdPath(directory: string): string | null {
   const rootPath = getPrdPath(directory);
@@ -132,11 +132,11 @@ export function readPrd(directory: string): PRD | null {
  * Write PRD to disk
  */
 export function writePrd(directory: string, prd: PRD): boolean {
-  // Prefer writing to existing location, or .omc by default
+  // Prefer writing to existing location, or .omb by default
   let prdPath = findPrdPath(directory);
 
   if (!prdPath) {
-    const omcDir = join(directory, '.omc');
+    const omcDir = join(directory, '.omb');
     if (!existsSync(omcDir)) {
       try {
         mkdirSync(omcDir, { recursive: true });

@@ -27,6 +27,31 @@ const { readStdin } = await import(
   pathToFileURL(join(__dirname, "lib", "stdin.mjs")).href
 );
 
+/**
+ * Find the project root by looking for common project markers
+ * @param {string} startDir - Directory to start searching from
+ * @returns {string} - Project root or startDir if not found
+ */
+function findProjectRoot(startDir) {
+  const markers = ['.git', 'package.json', 'pyproject.toml', '.claude', 'CLAUDE.md', 'Cargo.toml', 'go.mod'];
+  let current = startDir;
+  const sep = process.platform === 'win32' ? '\\' : '/';
+  const root = process.platform === 'win32' ? current.split(sep)[0] + sep : '/';
+
+  while (current !== root) {
+    for (const marker of markers) {
+      if (existsSync(join(current, marker))) {
+        return current;
+      }
+    }
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  return startDir; // Fallback to original directory
+}
+
 function readJsonFile(path) {
   try {
     if (!existsSync(path)) return null;
@@ -58,12 +83,20 @@ function writeJsonFile(path, data) {
 const STALE_STATE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 /**
- * Check if a state is stale based on its timestamps.
- * A state is considered stale if it hasn't been updated recently.
+ * Check if a state is stale based on its timestamps and session ID.
+ * A state is considered stale if it hasn't been updated recently or belongs to a different session.
  * We check both `last_checked_at` and `started_at` - using whichever is more recent.
+ * @param {object} state - State object to check
+ * @param {string} currentSessionId - Current session ID to compare against
+ * @returns {boolean} - True if state is stale or belongs to different session
  */
-function isStaleState(state) {
+function isStaleState(state, currentSessionId) {
   if (!state) return true;
+
+  // If session_id exists and doesn't match current session, consider stale
+  if (currentSessionId && state.session_id && state.session_id !== currentSessionId) {
+    return true;
+  }
 
   const lastChecked = state.last_checked_at
     ? new Date(state.last_checked_at).getTime()
@@ -78,73 +111,12 @@ function isStaleState(state) {
 }
 
 /**
- * Normalize a path for comparison.
- * Uses path.resolve() + path.normalize() for proper handling of:
- * - Trailing slashes
- * - Path separators (\ vs /)
- * - Relative segments (../, ./)
- * - Case sensitivity on Windows
+ * Read state file from local location only.
  */
-function normalizePath(p) {
-  if (!p) return "";
-  // resolve() makes the path absolute, normalize() cleans up separators and relative segments
-  let normalized = resolve(p);
-  normalized = normalize(normalized);
-  // Remove any trailing separators using a single regex that handles both / and \
-  normalized = normalized.replace(/[\/\\]+$/, "");
-  // On Windows, normalize to lowercase for case-insensitive comparison
-  if (process.platform === "win32") {
-    normalized = normalized.toLowerCase();
-  }
-  return normalized;
-}
-
-/**
- * Check if a state belongs to the current project.
- *
- * For local state files: Accept legacy states without project_path for backward compatibility.
- * For global state files: Require project_path to prevent cross-project leakage.
- *
- * @param state - The state object to check
- * @param currentDirectory - The current working directory
- * @param isGlobalState - Whether this state was loaded from global fallback path
- */
-function isStateForCurrentProject(
-  state,
-  currentDirectory,
-  isGlobalState = false,
-) {
-  if (!state) return true;
-
-  // No project_path in state
-  if (!state.project_path) {
-    // For global state files, require project_path to prevent cross-project leakage
-    if (isGlobalState) {
-      return false;
-    }
-    // For local state files, accept legacy states for backward compatibility
-    return true;
-  }
-
-  // Compare normalized paths
-  return normalizePath(state.project_path) === normalizePath(currentDirectory);
-}
-
-/**
- * Read state file from local or global location, tracking the source.
- * Returns { state, path, isGlobal } to track where the state was loaded from.
- */
-function readStateFile(stateDir, globalStateDir, filename) {
+function readStateFile(stateDir, filename) {
   const localPath = join(stateDir, filename);
-  const globalPath = join(globalStateDir, filename);
-
-  let state = readJsonFile(localPath);
-  if (state) return { state, path: localPath, isGlobal: false };
-
-  state = readJsonFile(globalPath);
-  if (state) return { state, path: globalPath, isGlobal: true };
-
-  return { state: null, path: localPath, isGlobal: false }; // Default to local for new writes
+  const state = readJsonFile(localPath);
+  return { state, path: localPath, isGlobal: false };
 }
 
 /**
@@ -209,7 +181,7 @@ function countIncompleteTodos(sessionId, projectDir) {
 
   // Project-local todos only
   for (const path of [
-    join(projectDir, ".omc", "todos.json"),
+    join(projectDir, ".omb", "todos.json"),
     join(projectDir, ".claude", "todos.json"),
   ]) {
     try {
@@ -306,8 +278,8 @@ async function main() {
 
     const directory = data.directory || process.cwd();
     const sessionId = data.sessionId || data.session_id || "";
-    const stateDir = join(directory, ".omc", "state");
-    const globalStateDir = join(homedir(), ".omc", "state");
+    const projectRoot = findProjectRoot(directory);
+    const stateDir = join(projectRoot, ".omb", "state");
 
     // CRITICAL: Never block context-limit stops.
     // Blocking these causes a deadlock where Claude Code cannot compact.
@@ -323,38 +295,14 @@ async function main() {
       return;
     }
 
-    // Read all mode states (local-first with fallback to global)
-    const ralph = readStateFile(stateDir, globalStateDir, "ralph-state.json");
-    const autopilot = readStateFile(
-      stateDir,
-      globalStateDir,
-      "autopilot-state.json",
-    );
-    const ultrapilot = readStateFile(
-      stateDir,
-      globalStateDir,
-      "ultrapilot-state.json",
-    );
-    const ultrawork = readStateFile(
-      stateDir,
-      globalStateDir,
-      "ultrawork-state.json",
-    );
-    const ecomode = readStateFile(
-      stateDir,
-      globalStateDir,
-      "ecomode-state.json",
-    );
-    const ultraqa = readStateFile(
-      stateDir,
-      globalStateDir,
-      "ultraqa-state.json",
-    );
-    const pipeline = readStateFile(
-      stateDir,
-      globalStateDir,
-      "pipeline-state.json",
-    );
+    // Read all mode states (local-only)
+    const ralph = readStateFile(stateDir, "ralph-state.json");
+    const autopilot = readStateFile(stateDir, "autopilot-state.json");
+    const ultrapilot = readStateFile(stateDir, "ultrapilot-state.json");
+    const ultrawork = readStateFile(stateDir, "ultrawork-state.json");
+    const ecomode = readStateFile(stateDir, "ecomode-state.json");
+    const ultraqa = readStateFile(stateDir, "ultraqa-state.json");
+    const pipeline = readStateFile(stateDir, "pipeline-state.json");
 
     // Swarm uses swarm-summary.json (not swarm-state.json) + marker file
     const swarmMarker = existsSync(join(stateDir, "swarm-active.marker"));
@@ -367,11 +315,7 @@ async function main() {
 
     // Priority 1: Ralph Loop (explicit persistence mode)
     // Skip if state is stale (older than 2 hours) - prevents blocking new sessions
-    if (
-      ralph.state?.active &&
-      !isStaleState(ralph.state) &&
-      isStateForCurrentProject(ralph.state, directory, ralph.isGlobal)
-    ) {
+    if (ralph.state?.active && !isStaleState(ralph.state, sessionId)) {
       const iteration = ralph.state.iteration || 1;
       const maxIter = ralph.state.max_iterations || 100;
 
@@ -391,11 +335,7 @@ async function main() {
     }
 
     // Priority 2: Autopilot (high-level orchestration)
-    if (
-      autopilot.state?.active &&
-      !isStaleState(autopilot.state) &&
-      isStateForCurrentProject(autopilot.state, directory, autopilot.isGlobal)
-    ) {
+    if (autopilot.state?.active && !isStaleState(autopilot.state, sessionId)) {
       const phase = autopilot.state.phase || "unknown";
       if (phase !== "complete") {
         const newCount = (autopilot.state.reinforcement_count || 0) + 1;
@@ -416,11 +356,7 @@ async function main() {
     }
 
     // Priority 3: Ultrapilot (parallel autopilot)
-    if (
-      ultrapilot.state?.active &&
-      !isStaleState(ultrapilot.state) &&
-      isStateForCurrentProject(ultrapilot.state, directory, ultrapilot.isGlobal)
-    ) {
+    if (ultrapilot.state?.active && !isStaleState(ultrapilot.state, sessionId)) {
       const workers = ultrapilot.state.workers || [];
       const incomplete = workers.filter(
         (w) => w.status !== "complete" && w.status !== "failed",
@@ -444,13 +380,7 @@ async function main() {
     }
 
     // Priority 4: Swarm (coordinated agents with SQLite)
-    // Note: Swarm only reads from local stateDir, never global fallback
-    if (
-      swarmMarker &&
-      swarmSummary?.active &&
-      !isStaleState(swarmSummary) &&
-      isStateForCurrentProject(swarmSummary, directory, false)
-    ) {
+    if (swarmMarker && swarmSummary?.active && !isStaleState(swarmSummary, sessionId)) {
       const pending =
         (swarmSummary.tasks_pending || 0) + (swarmSummary.tasks_claimed || 0);
       if (pending > 0) {
@@ -472,11 +402,7 @@ async function main() {
     }
 
     // Priority 5: Pipeline (sequential stages)
-    if (
-      pipeline.state?.active &&
-      !isStaleState(pipeline.state) &&
-      isStateForCurrentProject(pipeline.state, directory, pipeline.isGlobal)
-    ) {
+    if (pipeline.state?.active && !isStaleState(pipeline.state, sessionId)) {
       const currentStage = pipeline.state.current_stage || 0;
       const totalStages = pipeline.state.stages?.length || 0;
       if (currentStage < totalStages) {
@@ -498,11 +424,7 @@ async function main() {
     }
 
     // Priority 6: UltraQA (QA cycling)
-    if (
-      ultraqa.state?.active &&
-      !isStaleState(ultraqa.state) &&
-      isStateForCurrentProject(ultraqa.state, directory, ultraqa.isGlobal)
-    ) {
+    if (ultraqa.state?.active && !isStaleState(ultraqa.state, sessionId)) {
       const cycle = ultraqa.state.cycle || 1;
       const maxCycles = ultraqa.state.max_cycles || 10;
       if (cycle < maxCycles && !ultraqa.state.all_passing) {
@@ -526,10 +448,9 @@ async function main() {
     // If state has session_id, it must match. If no session_id (legacy), allow.
     if (
       ultrawork.state?.active &&
-      !isStaleState(ultrawork.state) &&
+      !isStaleState(ultrawork.state, sessionId) &&
       (!ultrawork.state.session_id ||
-        ultrawork.state.session_id === sessionId) &&
-      isStateForCurrentProject(ultrawork.state, directory, ultrawork.isGlobal)
+        ultrawork.state.session_id === sessionId)
     ) {
       const newCount = (ultrawork.state.reinforcement_count || 0) + 1;
       const maxReinforcements = ultrawork.state.max_reinforcements || 50;
@@ -566,11 +487,7 @@ async function main() {
     }
 
     // Priority 8: Ecomode - ALWAYS continue while active
-    if (
-      ecomode.state?.active &&
-      !isStaleState(ecomode.state) &&
-      isStateForCurrentProject(ecomode.state, directory, ecomode.isGlobal)
-    ) {
+    if (ecomode.state?.active && !isStaleState(ecomode.state, sessionId)) {
       const newCount = (ecomode.state.reinforcement_count || 0) + 1;
       const maxReinforcements = ecomode.state.max_reinforcements || 50;
 

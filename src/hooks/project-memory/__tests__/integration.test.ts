@@ -54,8 +54,8 @@ describe('Project Memory Integration', () => {
       expect(memory?.techStack.packageManager).toBe('pnpm');
       expect(memory?.build.buildCommand).toBe('pnpm build');
 
-      // Verify .omc directory structure
-      const omcDir = path.join(tempDir, '.omc');
+      // Verify .omb directory structure
+      const omcDir = path.join(tempDir, '.omb');
       const omcStat = await fs.stat(omcDir);
       expect(omcStat.isDirectory()).toBe(true);
     });
@@ -175,7 +175,7 @@ describe('Project Memory Integration', () => {
       memory!.lastScanned = Date.now() - 25 * 60 * 60 * 1000;
 
       // Save with old timestamp
-      const memoryPath = path.join(tempDir, '.omc', 'project-memory.json');
+      const memoryPath = path.join(tempDir, '.omb', 'project-memory.json');
       await fs.writeFile(memoryPath, JSON.stringify(memory, null, 2));
 
       // Clear session cache to allow re-registration

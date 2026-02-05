@@ -24,7 +24,7 @@
  */
 
 import { writeFileSync, mkdirSync, existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { homedir } from 'os';
 
 const ULTRATHINK_MESSAGE = `<think-mode>
@@ -53,6 +53,18 @@ async function readStdin() {
   return Buffer.concat(chunks).toString('utf-8');
 }
 
+// Validate directory input
+function isValidDirectory(dir) {
+  if (!dir || typeof dir !== 'string') return false;
+  const resolved = resolve(dir);
+  // Must be absolute and not root
+  if (resolved === '/' || resolved === '\\') return false;
+  // Must be under home directory or a valid project path
+  const home = homedir();
+  if (!resolved.startsWith(home) && !resolved.startsWith('/tmp/')) return false;
+  return true;
+}
+
 // Extract prompt from various JSON structures
 function extractPrompt(input) {
   try {
@@ -67,9 +79,7 @@ function extractPrompt(input) {
     }
     return '';
   } catch {
-    // Fallback: try to extract with regex
-    const match = input.match(/"(?:prompt|content|text)"\s*:\s*"([^"]+)"/);
-    return match ? match[1] : '';
+    return '';
   }
 }
 
@@ -102,14 +112,14 @@ function activateState(directory, prompt, stateName, sessionId) {
   };
 
   // Write to local .omb/state directory
-  const localDir = join(directory, '.omc', 'state');
+  const localDir = join(directory, '.omb', 'state');
   if (!existsSync(localDir)) {
     try { mkdirSync(localDir, { recursive: true }); } catch {}
   }
   try { writeFileSync(join(localDir, `${stateName}-state.json`), JSON.stringify(state, null, 2), { mode: 0o600 }); } catch {}
 
   // Write to global .omb/state directory
-  const globalDir = join(homedir(), '.omc', 'state');
+  const globalDir = join(homedir(), '.omb', 'state');
   if (!existsSync(globalDir)) {
     try { mkdirSync(globalDir, { recursive: true }); } catch {}
   }
@@ -121,8 +131,8 @@ function activateState(directory, prompt, stateName, sessionId) {
  */
 function clearStateFiles(directory, modeNames) {
   for (const name of modeNames) {
-    const localPath = join(directory, '.omc', 'state', `${name}-state.json`);
-    const globalPath = join(homedir(), '.omc', 'state', `${name}-state.json`);
+    const localPath = join(directory, '.omb', 'state', `${name}-state.json`);
+    const globalPath = join(homedir(), '.omb', 'state', `${name}-state.json`);
     try { if (existsSync(localPath)) unlinkSync(localPath); } catch {}
     try { if (existsSync(globalPath)) unlinkSync(globalPath); } catch {}
   }
@@ -229,6 +239,7 @@ async function main() {
     let data = {};
     try { data = JSON.parse(input); } catch {}
     const directory = data.directory || process.cwd();
+    const safeDirectory = isValidDirectory(directory) ? directory : process.cwd();
     const sessionId = data.sessionId || data.session_id || '';
 
     const prompt = extractPrompt(input);
@@ -348,7 +359,7 @@ async function main() {
 
     // Handle cancel specially - clear states and emit
     if (resolved.length > 0 && resolved[0].name === 'cancel') {
-      clearStateFiles(directory, ['ralph', 'autopilot', 'ultrapilot', 'ultrawork', 'ecomode', 'swarm', 'pipeline']);
+      clearStateFiles(safeDirectory, ['ralph', 'autopilot', 'ultrapilot', 'ultrawork', 'ecomode', 'swarm', 'pipeline']);
       console.log(JSON.stringify(createHookOutput(createSkillInvocation('cancel', prompt))));
       return;
     }
@@ -356,7 +367,7 @@ async function main() {
     // Activate states for modes that need them
     const stateModes = resolved.filter(m => ['ralph', 'autopilot', 'ultrapilot', 'ultrawork', 'ecomode'].includes(m.name));
     for (const mode of stateModes) {
-      activateState(directory, prompt, mode.name, sessionId);
+      activateState(safeDirectory, prompt, mode.name, sessionId);
     }
 
     // Special: Ralph with ultrawork (only if ecomode NOT present)
@@ -364,7 +375,7 @@ async function main() {
     const hasEcomode = resolved.some(m => m.name === 'ecomode');
     const hasUltrawork = resolved.some(m => m.name === 'ultrawork');
     if (hasRalph && !hasEcomode && !hasUltrawork) {
-      activateState(directory, prompt, 'ultrawork', sessionId);
+      activateState(safeDirectory, prompt, 'ultrawork', sessionId);
     }
 
     // Handle ultrathink specially - prepend message instead of skill invocation

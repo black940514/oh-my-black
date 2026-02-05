@@ -33,6 +33,21 @@ Invoke Skill: plan --consensus {{ARGUMENTS}}
 
 Pass all arguments to the plan skill. The plan skill handles all consensus logic, state management, and iteration.
 
+## CRITICAL: Plan-Only Mode (No Auto-Implementation)
+
+**STOP AFTER PLANNING IS COMPLETE.**
+
+When the Critic approves the plan:
+1. Save the plan to `.omb/plans/`
+2. Display: "✅ [RALPLAN 완료] 계획이 승인되었습니다."
+3. **DO NOT automatically implement the plan**
+4. **DO NOT continue to code generation**
+5. Ask: "구현을 시작하시겠습니까? (autopilot/ralph/manual)"
+
+**Override Continuation Enforcement:** The ralplan task is COMPLETE when the plan is approved and saved. The "FUNCTIONALITY" check does NOT apply to planning tasks - the deliverable is the PLAN, not the implementation.
+
+This prevents automatic implementation after planning, giving the user control over when to start coding.
+
 ## See Also
 
 - `/plan` - Base planning skill with all modes

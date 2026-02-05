@@ -7,7 +7,8 @@
  */
 
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
+import { homedir } from 'os';
 
 // Read all stdin
 async function readStdin() {
@@ -18,21 +19,31 @@ async function readStdin() {
   return Buffer.concat(chunks).toString('utf-8');
 }
 
+// Validate directory input
+function isValidDirectory(dir) {
+  if (!dir || typeof dir !== 'string') return false;
+  const resolved = resolve(dir);
+  // Must be absolute and not root
+  if (resolved === '/' || resolved === '\\') return false;
+  // Must be under home directory or a valid project path
+  const home = homedir();
+  if (!resolved.startsWith(home) && !resolved.startsWith('/tmp/')) return false;
+  return true;
+}
+
 // Simple JSON field extraction
 function extractJsonField(input, field, defaultValue = '') {
   try {
     const data = JSON.parse(input);
     return data[field] ?? defaultValue;
   } catch {
-    // Fallback regex extraction
-    const match = input.match(new RegExp(`"${field}"\\s*:\\s*"([^"]*)"`, 'i'));
-    return match ? match[1] : defaultValue;
+    return defaultValue;
   }
 }
 
 // Get agent tracking info from state file
 function getAgentTrackingInfo(directory) {
-  const trackingFile = join(directory, '.omc', 'state', 'subagent-tracking.json');
+  const trackingFile = join(directory, '.omb', 'state', 'subagent-tracking.json');
   try {
     if (existsSync(trackingFile)) {
       const data = JSON.parse(readFileSync(trackingFile, 'utf-8'));
@@ -50,7 +61,7 @@ function getTodoStatus(directory) {
 
   // Check project-local todos
   const localPaths = [
-    join(directory, '.omc', 'todos.json'),
+    join(directory, '.omb', 'todos.json'),
     join(directory, '.claude', 'todos.json')
   ];
 
@@ -121,8 +132,9 @@ async function main() {
 
     const toolName = extractJsonField(input, 'toolName', 'unknown');
     const directory = extractJsonField(input, 'directory', process.cwd());
+    const safeDirectory = isValidDirectory(directory) ? directory : process.cwd();
 
-    const todoStatus = getTodoStatus(directory);
+    const todoStatus = getTodoStatus(safeDirectory);
 
     let message;
     if (toolName === 'Task') {
@@ -130,7 +142,7 @@ async function main() {
       try {
         toolInput = JSON.parse(input).toolInput;
       } catch {}
-      message = generateAgentSpawnMessage(toolInput, directory, todoStatus);
+      message = generateAgentSpawnMessage(toolInput, safeDirectory, todoStatus);
     } else {
       message = generateMessage(toolName, todoStatus);
     }

@@ -42,7 +42,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('Hello Alice, you are 30 years old.');
     });
@@ -61,7 +61,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('User: Bob, Email: bob@example.com');
     });
@@ -76,8 +76,8 @@ describe('Meta-prompt Generation', () => {
       const contextFalse: TemplateContext = { isAdmin: false };
 
       const compiled = engine.compile(template);
-      const resultTrue = engine.render(compiled, contextTrue);
-      const resultFalse = engine.render(compiled, contextFalse);
+      const resultTrue = engine.renderCompiled(compiled, contextTrue);
+      const resultFalse = engine.renderCompiled(compiled, contextFalse);
 
       expect(resultTrue).toBe('Admin Panel');
       expect(resultFalse).toBe('');
@@ -91,8 +91,8 @@ describe('Meta-prompt Generation', () => {
 
       const compiled = engine.compile(template);
 
-      expect(engine.render(compiled, { isAdmin: true })).toBe('Admin');
-      expect(engine.render(compiled, { isAdmin: false })).toBe('User');
+      expect(engine.renderCompiled(compiled, { isAdmin: true })).toBe('Admin');
+      expect(engine.renderCompiled(compiled, { isAdmin: false })).toBe('User');
     });
 
     it('should process loops', () => {
@@ -106,7 +106,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('abc');
     });
@@ -125,7 +125,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('AliceBob');
     });
@@ -141,7 +141,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('HELLO');
     });
@@ -157,7 +157,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('hello');
     });
@@ -173,7 +173,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('a, b, c');
     });
@@ -190,7 +190,7 @@ describe('Meta-prompt Generation', () => {
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toBe('Name: Alice, Age: ');
     });
@@ -222,7 +222,7 @@ No members
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toContain('Team Report');
       expect(result).toContain('Alice (builder)');
@@ -342,7 +342,7 @@ No members
 
       const context = teamToContext(team);
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toContain(team.name);
       expect(result).toContain(team.description);
@@ -384,7 +384,7 @@ Model Tier: {{modelTier | upper}}
       };
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toContain('Implement Auth');
       expect(result).toContain('Login works');
@@ -430,7 +430,7 @@ Phase {{phase}}:
       );
 
       const compiled = engine.compile(template);
-      const result = engine.render(compiled, context);
+      const result = engine.renderCompiled(compiled, context);
 
       expect(result).toContain('Auth Implementation');
       expect(result).toContain(decomposition.analysis.task);

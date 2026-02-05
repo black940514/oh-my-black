@@ -76,7 +76,7 @@ const program = new Command();
 
 // Helper functions for auto-backfill
 async function checkIfBackfillNeeded(): Promise<boolean> {
-  const tokenLogPath = join(homedir(), '.omc', 'state', 'token-tracking.jsonl');
+  const tokenLogPath = join(homedir(), '.omb', 'state', 'token-tracking.jsonl');
   try {
     await fs.access(tokenLogPath);
     const stats = await fs.stat(tokenLogPath);
@@ -385,7 +385,7 @@ Examples:
     const configContent = `// Oh-My-ClaudeCode Configuration
 // See: https://github.com/your-repo/oh-my-black for documentation
 {
-  "$schema": "./sisyphus-schema.json",
+  "$schema": "./omb-schema.json",
 
   // Agent model configurations
   "agents": {
@@ -461,7 +461,7 @@ Examples:
     console.log(chalk.green(`Created configuration: ${targetPath}`));
 
     // Also create the JSON schema for editor support
-    const schemaPath = join(targetDir, 'sisyphus-schema.json');
+    const schemaPath = join(targetDir, 'omb-schema.json');
     writeFileSync(schemaPath, JSON.stringify(generateConfigSchema(), null, 2));
     console.log(chalk.green(`Created JSON schema: ${schemaPath}`));
 
@@ -519,10 +519,13 @@ Examples:
       console.log(chalk.blue('Configuration file paths:'));
       console.log(`  User:    ${paths.user}`);
       console.log(`  Project: ${paths.project}`);
+      console.log(chalk.gray('\nLegacy paths (for backward compatibility):'));
+      console.log(`  User:    ${paths.userLegacy}`);
+      console.log(`  Project: ${paths.projectLegacy}`);
 
       console.log(chalk.blue('\nFile status:'));
-      console.log(`  User:    ${existsSync(paths.user) ? chalk.green('exists') : chalk.gray('not found')}`);
-      console.log(`  Project: ${existsSync(paths.project) ? chalk.green('exists') : chalk.gray('not found')}`);
+      console.log(`  User:    ${existsSync(paths.user) ? chalk.green('exists') : existsSync(paths.userLegacy) ? chalk.yellow('legacy exists') : chalk.gray('not found')}`);
+      console.log(`  Project: ${existsSync(paths.project) ? chalk.green('exists') : existsSync(paths.projectLegacy) ? chalk.yellow('legacy exists') : chalk.gray('not found')}`);
       return;
     }
 

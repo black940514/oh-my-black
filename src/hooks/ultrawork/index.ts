@@ -8,25 +8,9 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import type { UltraworkState } from './types.js';
 
-export interface UltraworkState {
-  /** Whether ultrawork mode is currently active */
-  active: boolean;
-  /** When ultrawork was activated */
-  started_at: string;
-  /** The original prompt that triggered ultrawork */
-  original_prompt: string;
-  /** Session ID the mode is bound to */
-  session_id?: string;
-  /** Project path for isolation */
-  project_path?: string;
-  /** Number of times the mode has been reinforced (for metrics) */
-  reinforcement_count: number;
-  /** Last time the mode was checked/reinforced */
-  last_checked_at: string;
-  /** Whether this ultrawork session is linked to a ralph-loop session */
-  linked_to_ralph?: boolean;
-}
+export type { UltraworkState, UltraworkConfig, UltraworkTeamConfig } from './types.js';
 
 const _DEFAULT_STATE: UltraworkState = {
   active: false,
@@ -41,7 +25,7 @@ const _DEFAULT_STATE: UltraworkState = {
  */
 function getStateFilePath(directory?: string): string {
   const baseDir = directory || process.cwd();
-  const omcDir = join(baseDir, '.omc');
+  const omcDir = join(baseDir, '.omb');
   return join(omcDir, 'state', 'ultrawork-state.json');
 }
 
@@ -51,7 +35,7 @@ function getStateFilePath(directory?: string): string {
  */
 function ensureStateDir(directory?: string): void {
   const baseDir = directory || process.cwd();
-  const omcDir = join(baseDir, '.omc', 'state');
+  const omcDir = join(baseDir, '.omb', 'state');
   if (!existsSync(omcDir)) {
     mkdirSync(omcDir, { recursive: true });
   }
@@ -215,3 +199,13 @@ export function createUltraworkStateHook(directory: string) {
     incrementReinforcement: () => incrementReinforcement(directory)
   };
 }
+
+// ============================================================================
+// Team Integration (Optional Team Composition)
+// ============================================================================
+
+export {
+  shouldUseAutoTeam,
+  composeTeamForUltrawork,
+  estimateComplexity
+} from './team-integration.js';

@@ -26,7 +26,7 @@ const NOTEPAD_TEMPLATE = '# Notepad\n' +
 
 // Initialize notepad.md if needed
 function initNotepad(directory) {
-  const omcDir = join(directory, '.omc');
+  const omcDir = join(directory, '.omb');
   const notepadPath = join(omcDir, 'notepad.md');
 
   if (!existsSync(omcDir)) {

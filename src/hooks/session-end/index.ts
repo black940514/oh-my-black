@@ -29,7 +29,7 @@ export interface HookOutput {
  * Read agent tracking to get spawn/completion counts
  */
 function getAgentCounts(directory: string): { spawned: number; completed: number } {
-  const trackingPath = path.join(directory, '.omc', 'state', 'subagent-tracking.json');
+  const trackingPath = path.join(directory, '.omb', 'state', 'subagent-tracking.json');
 
   if (!fs.existsSync(trackingPath)) {
     return { spawned: 0, completed: 0 };
@@ -52,7 +52,7 @@ function getAgentCounts(directory: string): { spawned: number; completed: number
  * Detect which modes were used during the session
  */
 function getModesUsed(directory: string): string[] {
-  const stateDir = path.join(directory, '.omc', 'state');
+  const stateDir = path.join(directory, '.omb', 'state');
   const modes: string[] = [];
 
   if (!fs.existsSync(stateDir)) {
@@ -83,7 +83,7 @@ function getModesUsed(directory: string): string[] {
  * Get session start time from state files
  */
 function getSessionStartTime(directory: string): string | undefined {
-  const stateDir = path.join(directory, '.omc', 'state');
+  const stateDir = path.join(directory, '.omb', 'state');
 
   if (!fs.existsSync(stateDir)) {
     return undefined;
@@ -146,7 +146,7 @@ export function recordSessionMetrics(directory: string, input: SessionEndInput):
  */
 export function cleanupTransientState(directory: string): number {
   let filesRemoved = 0;
-  const omcDir = path.join(directory, '.omc');
+  const omcDir = path.join(directory, '.omb');
 
   if (!fs.existsSync(omcDir)) {
     return filesRemoved;
@@ -241,7 +241,7 @@ const MODE_STATE_FILES = [
 export function cleanupModeStates(directory: string, sessionId?: string): { filesRemoved: number; modesCleaned: string[] } {
   let filesRemoved = 0;
   const modesCleaned: string[] = [];
-  const stateDir = path.join(directory, '.omc', 'state');
+  const stateDir = path.join(directory, '.omb', 'state');
 
   if (!fs.existsSync(stateDir)) {
     return { filesRemoved, modesCleaned };
@@ -294,7 +294,7 @@ export function cleanupModeStates(directory: string, sessionId?: string): { file
  * Export session summary to .omb/sessions/
  */
 export function exportSessionSummary(directory: string, metrics: SessionMetrics): void {
-  const sessionsDir = path.join(directory, '.omc', 'sessions');
+  const sessionsDir = path.join(directory, '.omb', 'sessions');
 
   // Create sessions directory if it doesn't exist
   if (!fs.existsSync(sessionsDir)) {

@@ -12,15 +12,15 @@
 import type {
   WorkflowState,
   WorkflowTask,
-  WorkflowConfig,
   WorkflowMetrics
 } from './workflow.js';
 import type { TeamDefinition } from './types.js';
 import type { BVOrchestrationResult } from '../verification/bv-integration.js';
+import type { BVTaskConfig } from '../verification/bv-integration.js';
+import { executeWithBVCycle } from '../verification/bv-integration.js';
 import {
   getAvailableTasks,
   autoAssignTasks,
-  assignTask,
   startTask,
   completeTask,
   failTask,
@@ -230,6 +230,54 @@ export async function defaultTaskExecutor(
     },
     totalDuration: executionTime,
     evidence: []
+  };
+}
+
+/**
+ * Create a real B-V task executor that calls executeWithBVCycle
+ * Use this instead of defaultTaskExecutor for actual agent execution
+ *
+ * @param team - Optional team definition for agent selection
+ * @returns TaskExecutor function that executes real B-V cycles
+ */
+export function createBVTaskExecutor(
+  team?: TeamDefinition
+): TaskExecutor {
+  return async (
+    task: WorkflowTask,
+    context: ExecutionContext
+  ): Promise<BVOrchestrationResult> => {
+    // If task has bvConfig, use it directly
+    if (task.bvConfig) {
+      return executeWithBVCycle(task.bvConfig, team);
+    }
+
+    // Otherwise, construct BVTaskConfig from WorkflowTask
+    const bvConfig: BVTaskConfig = {
+      taskId: task.id,
+      taskDescription: task.subtask.prompt || task.subtask.component.description,
+      requirements: task.subtask.acceptanceCriteria || [],
+      acceptanceCriteria: task.subtask.acceptanceCriteria || [],
+      validationType:
+        task.subtask.validation?.validationType ||
+        context.workflow.config.defaultValidationType ||
+        'validator',
+      builderAgent: task.assignment?.memberId || task.subtask.agentType || 'executor',
+      validatorAgents: task.subtask.validation?.validatorAgent
+        ? [task.subtask.validation.validatorAgent]
+        : undefined, // Auto-select based on validation type
+      maxRetries:
+        task.subtask.validation?.maxRetries ||
+        context.workflow.config.maxRetries ||
+        3,
+      timeout: context.workflow.config.taskTimeout || 120000,
+      complexity:
+        task.subtask.component.effort > 0.7 ? 'high' :
+        task.subtask.component.effort > 0.4 ? 'medium' : 'low'
+    };
+
+    // Execute real B-V cycle
+    return executeWithBVCycle(bvConfig, team);
   };
 }
 

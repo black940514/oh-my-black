@@ -652,10 +652,31 @@ fi
 | Pipeline | No | N/A |
 | Plan Consensus | Yes (plan file path preserved) | N/A |
 
+## Global Registry Cleanup
+
+The cancel skill also cleans up the global active modes registry at `~/.claude/.omb-active-modes.json`.
+This registry tracks active modes across projects for cross-directory lookup.
+
+After any mode is cancelled, run this to clean the registry:
+
+```bash
+# Clean current project from global registry
+REGISTRY_FILE="$HOME/.claude/.omb-active-modes.json"
+PROJECT_PATH=$(pwd)
+
+if [[ -f "$REGISTRY_FILE" ]]; then
+  # Remove current project from registry using jq
+  if command -v jq &>/dev/null; then
+    jq --arg path "$PROJECT_PATH" 'del(.[$path])' "$REGISTRY_FILE" > "${REGISTRY_FILE}.tmp" && mv "${REGISTRY_FILE}.tmp" "$REGISTRY_FILE"
+  fi
+fi
+```
+
 ## Notes
 
 - **Dependency-aware**: Autopilot cancellation cleans up Ralph and UltraQA
 - **Link-aware**: Ralph cancellation cleans up linked Ultrawork or Ecomode
 - **Safe**: Only clears linked Ultrawork, preserves standalone Ultrawork
 - **Local-only**: Clears state files in `.omb/state/` directory
+- **Registry-aware**: Cleans global active modes registry for cross-directory lookup
 - **Resume-friendly**: Autopilot state is preserved for seamless resume

@@ -39,7 +39,7 @@ describe('AutopilotCancel', () => {
   beforeEach(() => {
     testDir = mkdtempSync(join(tmpdir(), 'autopilot-cancel-test-'));
     const fs = require('fs');
-    fs.mkdirSync(join(testDir, '.omc', 'state'), { recursive: true });
+    fs.mkdirSync(join(testDir, '.omb', 'state'), { recursive: true });
     vi.clearAllMocks();
   });
 
@@ -60,7 +60,7 @@ describe('AutopilotCancel', () => {
       const state = initAutopilot(testDir, 'test idea');
       if (state) {
         state.active = false;
-        const stateFile = join(testDir, '.omc', 'state', 'autopilot-state.json');
+        const stateFile = join(testDir, '.omb', 'state', 'autopilot-state.json');
         const fs = require('fs');
         fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
       }

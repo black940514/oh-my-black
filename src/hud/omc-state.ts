@@ -38,8 +38,8 @@ function isStateFileStale(filePath: string): boolean {
  * Returns null if file doesn't exist in either location.
  */
 function resolveStatePath(directory: string, filename: string): string | null {
-  const newPath = join(directory, '.omc', 'state', filename);
-  const legacyPath = join(directory, '.omc', filename);
+  const newPath = join(directory, '.omb', 'state', filename);
+  const legacyPath = join(directory, '.omb', filename);
   if (existsSync(newPath)) return newPath;
   if (existsSync(legacyPath)) return legacyPath;
   return null;
@@ -156,8 +156,8 @@ export function readPrdStateForHud(directory: string): PrdStateForHud | null {
   let prdPath = join(directory, 'prd.json');
 
   if (!existsSync(prdPath)) {
-    // Check .omc
-    prdPath = join(directory, '.omc', 'prd.json');
+    // Check .omb
+    prdPath = join(directory, '.omb', 'prd.json');
 
     if (!existsSync(prdPath)) {
       return null;

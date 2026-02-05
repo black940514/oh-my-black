@@ -5,7 +5,7 @@
  */
 
 /** Sisyphus state directory */
-export const BOULDER_DIR = '.omc';
+export const BOULDER_DIR = '.omb';
 
 /** Boulder state file name */
 export const BOULDER_FILE = 'boulder.json';

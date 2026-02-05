@@ -199,10 +199,12 @@ async function runValidation(
       };
 
     case 'validator':
-      // Validator agent approval
-      // In real implementation: spawn validator agent to review changes
+      // TODO: Integrate with agent-spawner.ts to spawn actual validator agent
+      // See: src/features/verification/agent-spawner.ts for spawnValidatorAgent()
+      // Tracked in: .omb/plans/security-improvement-plan.md Phase 4.3
+      console.warn('[ohmyblack-checks] Validator agent not yet integrated - using placeholder approval');
       return {
-        passed: true, // Placeholder - would be determined by validator agent
+        passed: true, // PLACEHOLDER: Replace with actual validator agent result
         evidence: {
           type: 'validator_approval',
           passed: true,
@@ -218,10 +220,12 @@ async function runValidation(
       };
 
     case 'architect':
-      // Architect-level deep validation
-      // In real implementation: spawn architect agent for comprehensive review
+      // TODO: Integrate with agent-spawner.ts to spawn architect agent
+      // Requires: Full B-V cycle integration with coordinator
+      // Tracked in: .omb/plans/security-improvement-plan.md Phase 4.3
+      console.warn('[ohmyblack-checks] Architect validation not yet integrated - using placeholder approval');
       return {
-        passed: true, // Placeholder - would be determined by architect agent
+        passed: true, // PLACEHOLDER: Replace with actual architect agent result
         evidence: {
           type: 'architect_approval',
           passed: true,

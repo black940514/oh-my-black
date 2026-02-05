@@ -56,14 +56,14 @@ describe('readHudConfig', () => {
       mockExistsSync.mockImplementation((path) => {
         const s = String(path);
         return /[\\/]Users[\\/]testuser[\\/]\.claude[\\/]settings\.json$/.test(s) ||
-               /[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omc[\\/]hud-config\.json$/.test(s);
+               /[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omb[\\/]hud-config\.json$/.test(s);
       });
       mockReadFileSync.mockImplementation((path) => {
         const s = String(path);
         if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]settings\.json$/.test(s)) {
           return JSON.stringify({ someOtherKey: true });
         }
-        if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omc[\\/]hud-config\.json$/.test(s)) {
+        if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omb[\\/]hud-config\.json$/.test(s)) {
           return JSON.stringify({
             elements: {
               cwd: true,
@@ -91,7 +91,7 @@ describe('readHudConfig', () => {
             }
           });
         }
-        if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omc[\\/]hud-config\.json$/.test(s)) {
+        if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omb[\\/]hud-config\.json$/.test(s)) {
           return JSON.stringify({
             elements: {
               gitRepo: false,
@@ -129,7 +129,7 @@ describe('readHudConfig', () => {
         if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]settings\.json$/.test(s)) {
           throw new Error('Read error');
         }
-        if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omc[\\/]hud-config\.json$/.test(s)) {
+        if (/[\\/]Users[\\/]testuser[\\/]\.claude[\\/]\.omb[\\/]hud-config\.json$/.test(s)) {
           return JSON.stringify({
             elements: { cwd: true }
           });
@@ -162,7 +162,7 @@ describe('readHudConfig', () => {
       // Custom value
       expect(config.elements.gitRepo).toBe(true);
       // Default values preserved
-      expect(config.elements.omcLabel).toBe(DEFAULT_HUD_CONFIG.elements.omcLabel);
+      expect(config.elements.ombLabel).toBe(DEFAULT_HUD_CONFIG.elements.ombLabel);
       expect(config.elements.contextBar).toBe(DEFAULT_HUD_CONFIG.elements.contextBar);
       expect(config.preset).toBe(DEFAULT_HUD_CONFIG.preset);
     });

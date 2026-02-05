@@ -14,7 +14,8 @@ export type VerificationEvidenceType =
   | 'functionality_verified'
   | 'architect_approval'
   | 'todo_complete'
-  | 'error_free';
+  | 'error_free'
+  | 'wiring_proof';
 
 /**
  * Extended evidence types for Ohmyblack Builder-Validator cycle

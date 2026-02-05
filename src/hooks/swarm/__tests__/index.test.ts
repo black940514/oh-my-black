@@ -37,11 +37,11 @@ describe('Swarm Lifecycle', () => {
       expect(success).toBe(true);
 
       // Verify database exists
-      const dbPath = join(testDir, '.omc', 'state', 'swarm.db');
+      const dbPath = join(testDir, '.omb', 'state', 'swarm.db');
       expect(existsSync(dbPath)).toBe(true);
 
       // Verify marker file exists
-      const markerPath = join(testDir, '.omc', 'state', 'swarm-active.marker');
+      const markerPath = join(testDir, '.omb', 'state', 'swarm-active.marker');
       expect(existsSync(markerPath)).toBe(true);
 
       // Verify state is active
@@ -72,7 +72,7 @@ describe('Swarm Lifecycle', () => {
 
     it('should fail when another exclusive mode is active', async () => {
       // Create autopilot state file to simulate active autopilot
-      const stateDir = join(testDir, '.omc', 'state');
+      const stateDir = join(testDir, '.omb', 'state');
       mkdirSync(stateDir, { recursive: true });
       const autopilotStatePath = join(stateDir, 'autopilot-state.json');
       writeFileSync(autopilotStatePath, JSON.stringify({
@@ -102,7 +102,7 @@ describe('Swarm Lifecycle', () => {
         cwd: testDir
       });
 
-      const markerPath = join(testDir, '.omc', 'state', 'swarm-active.marker');
+      const markerPath = join(testDir, '.omb', 'state', 'swarm-active.marker');
       expect(existsSync(markerPath)).toBe(true);
 
       // Stop swarm without deleting database
@@ -113,7 +113,7 @@ describe('Swarm Lifecycle', () => {
       expect(existsSync(markerPath)).toBe(false);
 
       // Database should still exist
-      const dbPath = join(testDir, '.omc', 'state', 'swarm.db');
+      const dbPath = join(testDir, '.omb', 'state', 'swarm.db');
       expect(existsSync(dbPath)).toBe(true);
     });
 
@@ -124,7 +124,7 @@ describe('Swarm Lifecycle', () => {
         cwd: testDir
       });
 
-      const dbPath = join(testDir, '.omc', 'state', 'swarm.db');
+      const dbPath = join(testDir, '.omb', 'state', 'swarm.db');
       expect(existsSync(dbPath)).toBe(true);
 
       // Stop with deleteDatabase flag
@@ -182,13 +182,13 @@ describe('Swarm Lifecycle', () => {
       stopSwarm(false);
 
       // After stopSwarm(false), database file still exists
-      const dbPath = join(testDir, '.omc', 'state', 'swarm.db');
+      const dbPath = join(testDir, '.omb', 'state', 'swarm.db');
       expect(existsSync(dbPath)).toBe(true);
 
       // isSwarmActive checks if db file exists (not if it's truly active)
       // This is expected behavior - database is preserved for analysis
       // For true active detection, use marker file (removed by stopSwarm)
-      const markerPath = join(testDir, '.omc', 'state', 'swarm-active.marker');
+      const markerPath = join(testDir, '.omb', 'state', 'swarm-active.marker');
       expect(existsSync(markerPath)).toBe(false);
     });
   });

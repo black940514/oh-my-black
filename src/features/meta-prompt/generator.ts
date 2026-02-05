@@ -202,7 +202,7 @@ export function decompositionToPlanContext(
 	}
 
 	// Include shared files info
-	if (decomposition.sharedFiles.length > 0) {
+	if (decomposition.sharedFiles && decomposition.sharedFiles.length > 0) {
 		context.sharedFiles = decomposition.sharedFiles.map((sf) => ({
 			pattern: sf.pattern,
 			reason: sf.reason,

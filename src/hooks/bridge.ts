@@ -42,17 +42,13 @@ import {
 import { activateUltrawork, readUltraworkState } from "./ultrawork/index.js";
 import {
   readAutopilotState,
-  isAutopilotActive,
   getPhasePrompt,
-  transitionPhase,
-  formatCompactSummary,
 } from "./autopilot/index.js";
 import {
   ULTRAWORK_MESSAGE,
   ULTRATHINK_MESSAGE,
   SEARCH_MESSAGE,
   ANALYZE_MESSAGE,
-  TODO_CONTINUATION_PROMPT,
   RALPH_MESSAGE,
 } from "../installer/hooks.js";
 
@@ -61,9 +57,6 @@ import {
   processSubagentStart,
   processSubagentStop,
   getAgentDashboard,
-  getAgentObservatory,
-  recordFileOwnership,
-  suggestInterventions,
   type SubagentStartInput,
   type SubagentStopInput,
 } from "./subagent-tracker/index.js";
@@ -71,7 +64,6 @@ import {
 import {
   recordAgentStart,
   recordAgentStop,
-  recordToolEvent,
   recordFileTouch,
 } from "./subagent-tracker/session-replay.js";
 import {
@@ -594,18 +586,48 @@ function processPreToolUse(input: HookInput): HookOutput {
 /**
  * Process post-tool-use hook
  */
-function processPostToolUse(input: HookInput): HookOutput {
+async function processPostToolUse(input: HookInput): Promise<HookOutput> {
   const directory = input.directory || process.cwd();
+  const messages: string[] = [];
+
+  // Check for pending B-V spawn requests
+  const { processPendingRequests, formatSpawnInstructions } = await import("./bv-spawner/index.js");
+  const bvInstructions = processPendingRequests(directory);
+  if (bvInstructions.length > 0) {
+    const bvMessage = formatSpawnInstructions(bvInstructions);
+    messages.push(bvMessage);
+  }
 
   // After Task completion, show updated agent dashboard
   if (input.toolName === "Task") {
     const dashboard = getAgentDashboard(directory);
     if (dashboard) {
-      return {
-        continue: true,
-        message: dashboard,
-      };
+      messages.push(dashboard);
     }
+  }
+
+  // Run wiring check after Edit/Write operations
+  if (input.toolName === "Edit" || input.toolName === "Write") {
+    const toolInput = input.toolInput as { file_path?: string } | undefined;
+    if (toolInput?.file_path) {
+      const { runWiringCheck } = await import("./wiring-check/index.js");
+      const config = loadConfig();
+      const wiringConfig = config.wiringCheck || {};
+
+      const result = await runWiringCheck([toolInput.file_path], wiringConfig);
+
+      if (!result.skipped && !result.passed) {
+        messages.push(`[WIRING CHECK]\n${result.message}\n\n${result.report || ""}`);
+      }
+    }
+  }
+
+  // Return combined messages
+  if (messages.length > 0) {
+    return {
+      continue: true,
+      message: messages.join('\n\n---\n\n')
+    };
   }
 
   return { continue: true };
@@ -702,7 +724,7 @@ export async function processHook(
         return processPreToolUse(input);
 
       case "post-tool-use":
-        return processPostToolUse(input);
+        return await processPostToolUse(input);
 
       case "autopilot":
         return processAutopilot(input);

@@ -1,6 +1,7 @@
 import { getTokenTracker } from './token-tracker.js';
 import { getSessionManager } from './session-manager.js';
-import { getMetricsCollector, aggregators } from './metrics-collector.js';
+// Metrics collector available for future analytics extensions
+// import { getMetricsCollector, aggregators } from './metrics-collector.js';
 import { calculateCost } from './cost-estimator.js';
 import { getTokscaleAdapter, TokscaleAdapter } from './tokscale-adapter.js';
 import * as fs from 'fs/promises';
@@ -73,7 +74,7 @@ export class QueryEngine {
 
   // UNUSED: Kept for reference, but tokscale path no longer mixes local JSONL
   // private async convertParsedToEntries(parsed: any[], range: TimeRange): Promise<any[]> {
-  //   const tokenLogPath = path.join(homedir(), '.omc', 'state', 'token-tracking.jsonl');
+  //   const tokenLogPath = path.join(homedir(), '.omb', 'state', 'token-tracking.jsonl');
   //   const entries: any[] = [];
   //
   //   try {
@@ -97,7 +98,7 @@ export class QueryEngine {
 
   private async getCostReportLegacy(period: 'daily' | 'weekly' | 'monthly'): Promise<CostReport> {
     const range = this.calculateTimeRange(period);
-    const tokenLogPath = path.join(homedir(), '.omc', 'state', 'token-tracking.jsonl');
+    const tokenLogPath = path.join(homedir(), '.omb', 'state', 'token-tracking.jsonl');
 
     try {
       const content = await fs.readFile(tokenLogPath, 'utf-8');
@@ -163,7 +164,7 @@ export class QueryEngine {
 
   // Hybrid data merging: Read agent attribution from local JSONL
   private async getAgentCostFromLocalLog(range: TimeRange): Promise<Record<string, number>> {
-    const tokenLogPath = path.join(homedir(), '.omc', 'state', 'token-tracking.jsonl');
+    const tokenLogPath = path.join(homedir(), '.omb', 'state', 'token-tracking.jsonl');
     const byAgent: Record<string, number> = {};
 
     try {
@@ -198,7 +199,7 @@ export class QueryEngine {
   }
 
   async getUsagePatterns(): Promise<UsagePattern> {
-    const tokenLogPath = path.join(homedir(), '.omc', 'state', 'token-tracking.jsonl');
+    const tokenLogPath = path.join(homedir(), '.omb', 'state', 'token-tracking.jsonl');
     const manager = getSessionManager();
     const history = await manager.getHistory();
 

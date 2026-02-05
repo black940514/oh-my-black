@@ -395,5 +395,7 @@ export function getHookScripts(): Record<string, string> {
     "post-tool-use.mjs": loadTemplate("post-tool-use.mjs"),
     // Shared library modules (in lib/ subdirectory)
     "lib/stdin.mjs": loadTemplate("lib/stdin.mjs"),
+    "lib/atomic-write.mjs": loadTemplate("lib/atomic-write.mjs"),
+    "lib/safety-rules.mjs": loadTemplate("lib/safety-rules.mjs"),
   };
 }

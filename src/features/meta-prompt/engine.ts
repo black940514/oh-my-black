@@ -41,7 +41,7 @@ export const helpers = {
 	},
 
 	/** Join array with separator */
-	join: (arr: unknown, separator = ','): string => {
+	join: (arr: unknown, separator = ', '): string => {
 		if (!Array.isArray(arr)) return String(arr);
 		return arr.map(String).join(separator);
 	},
@@ -191,38 +191,16 @@ export function compile(source: string, options?: CompileOptions): CompiledTempl
 		);
 		result = result.replace(commentRegex, '');
 
-		// Process blocks (#if, #each, #else)
+		// Process blocks (#if, #each, #else) and variables
+		// Variables are now processed within processBlocks to handle loop contexts correctly
 		result = processBlocks(result, context, opts);
-
-		// Process variables
-		const varRegex = new RegExp(`${varOpen}\\s*([^}]+?)\\s*${varClose}`, 'g');
-		result = result.replace(varRegex, (match, expression: string) => {
-			const { variable, helpers: helperChain } = parseHelperChain(expression);
-
-			let value = getValue(context, variable);
-
-			if (value === undefined && opts.strict) {
-				throw new Error(`Undefined variable: ${variable}`);
-			}
-
-			if (value === undefined) {
-				return '';
-			}
-
-			// Apply helpers
-			if (helperChain.length > 0) {
-				value = applyHelpers(value, helperChain, context);
-			}
-
-			return escapeHtml(String(value));
-		});
 
 		return result;
 	};
 }
 
 /**
- * Process block directives (#if, #each, #else)
+ * Process block directives (#if, #each, #else) and variables
  */
 function processBlocks(
 	source: string,
@@ -231,13 +209,58 @@ function processBlocks(
 ): string {
 	let result = source;
 
-	// Process #each blocks
+	// Process #each blocks first (they may contain nested blocks)
 	result = processEachBlocks(result, context, options);
 
 	// Process #if blocks
 	result = processIfBlocks(result, context, options);
 
+	// Process variables within this context
+	result = processVariables(result, context, options);
+
 	return result;
+}
+
+/**
+ * Process variable substitution {{variable}} and {{variable | helper}}
+ */
+function processVariables(
+	source: string,
+	context: TemplateContext,
+	options: CompileOptions
+): string {
+	const delims = options.delimiters!;
+	const varOpen = escapeRegex(delims.variable[0]);
+	const varClose = escapeRegex(delims.variable[1]);
+
+	// Don't match block starts ({{#) or block ends ({{/)
+	const varRegex = new RegExp(`${varOpen}\\s*([^#/}][^}]*?)\\s*${varClose}`, 'g');
+
+	return source.replace(varRegex, (match, expression: string) => {
+		// Skip else keyword
+		if (expression.trim() === 'else') {
+			return match;
+		}
+
+		const { variable, helpers: helperChain } = parseHelperChain(expression);
+
+		let value = getValue(context, variable);
+
+		if (value === undefined && options.strict) {
+			throw new Error(`Undefined variable: ${variable}`);
+		}
+
+		if (value === undefined) {
+			return '';
+		}
+
+		// Apply helpers
+		if (helperChain.length > 0) {
+			value = applyHelpers(value, helperChain, context);
+		}
+
+		return escapeHtml(String(value));
+	});
 }
 
 /**
@@ -254,11 +277,13 @@ function processIfBlocks(
 	const blockEndOpen = escapeRegex(delims.blockEnd[0]);
 	const blockEndClose = escapeRegex(delims.blockEnd[1]);
 
-	// Match #if blocks with optional #else
+	// Match #if blocks with optional {{else}} (not {{#else}})
+	const varOpen = escapeRegex(options.delimiters!.variable[0]);
+	const varClose = escapeRegex(options.delimiters!.variable[1]);
 	const ifRegex = new RegExp(
 		`${blockOpen}if\\s+([^}]+?)${blockClose}` +
 			`(.*?)` +
-			`(?:${blockOpen}else${blockClose}(.*?))?` +
+			`(?:${varOpen}else${varClose}(.*?))?` +
 			`${blockEndOpen}if${blockEndClose}`,
 		'gs'
 	);
@@ -325,6 +350,12 @@ function processEachBlocks(
 						'@first': index === 0,
 						'@last': index === array.length - 1,
 					};
+
+					// If item is an object, spread its properties into context
+					// This allows {{name}} instead of {{this.name}}
+					if (item && typeof item === 'object' && !Array.isArray(item)) {
+						Object.assign(itemContext, item);
+					}
 
 					if (aliasName) {
 						itemContext[aliasName] = item;

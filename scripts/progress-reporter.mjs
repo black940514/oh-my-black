@@ -5,7 +5,7 @@
  *
  * Features:
  * - Tracks total/completed tasks
- * - Updates .omc/progress.json in real-time
+ * - Updates .omb/progress.json in real-time
  * - Calculates ETA (optional)
  */
 
@@ -31,10 +31,10 @@ process.stdin.on('end', async () => {
 
 async function reportProgress(hookInput, action) {
   const cwd = hookInput.cwd || process.cwd();
-  const omcDir = join(cwd, '.omc');
+  const omcDir = join(cwd, '.omb');
   const progressPath = join(omcDir, 'progress.json');
 
-  // Ensure .omc directory exists
+  // Ensure .omb directory exists
   if (!existsSync(omcDir)) {
     try {
       mkdirSync(omcDir, { recursive: true });

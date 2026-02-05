@@ -50,12 +50,12 @@ describe('Project Memory Storage', () => {
   describe('getMemoryPath', () => {
     it('should return correct memory file path', () => {
       const memoryPath = getMemoryPath(projectRoot);
-      expect(memoryPath).toBe(path.join(projectRoot, '.omc', 'project-memory.json'));
+      expect(memoryPath).toBe(path.join(projectRoot, '.omb', 'project-memory.json'));
     });
   });
 
   describe('saveProjectMemory', () => {
-    it('should create .omc directory and save memory file', async () => {
+    it('should create .omb directory and save memory file', async () => {
       const memory = createBaseMemory(projectRoot, {
         techStack: {
           languages: [{ name: 'TypeScript', version: '5.0.0', confidence: 'high', markers: ['tsconfig.json'] }],
@@ -87,8 +87,8 @@ describe('Project Memory Storage', () => {
 
       await saveProjectMemory(projectRoot, memory);
 
-      // Verify .omc directory exists
-      const omcDir = path.join(projectRoot, '.omc');
+      // Verify .omb directory exists
+      const omcDir = path.join(projectRoot, '.omb');
       const omcStat = await fs.stat(omcDir);
       expect(omcStat.isDirectory()).toBe(true);
 
@@ -168,8 +168,8 @@ describe('Project Memory Storage', () => {
     });
 
     it('should return null for invalid JSON', async () => {
-      // Create .omc directory
-      const omcDir = path.join(projectRoot, '.omc');
+      // Create .omb directory
+      const omcDir = path.join(projectRoot, '.omb');
       await fs.mkdir(omcDir, { recursive: true });
 
       // Write invalid JSON
@@ -181,8 +181,8 @@ describe('Project Memory Storage', () => {
     });
 
     it('should return null for memory with missing required fields', async () => {
-      // Create .omc directory
-      const omcDir = path.join(projectRoot, '.omc');
+      // Create .omb directory
+      const omcDir = path.join(projectRoot, '.omb');
       await fs.mkdir(omcDir, { recursive: true });
 
       // Write incomplete memory

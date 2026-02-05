@@ -6,7 +6,8 @@
 import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
-import type { PluginConfig } from '../../shared/types.js';
+// PluginConfig type reserved for future config validation
+// import type { PluginConfig } from '../../shared/types.js';
 import { colors } from '../utils/formatting.js';
 
 export interface ConflictReport {

@@ -108,4 +108,52 @@ export class TemplateEngine {
 	delete(name: string): boolean {
 		return this.templates.delete(name);
 	}
+
+	/**
+	 * Compile a template object (for direct use without registration)
+	 * Supports both standard Template format and simplified { name, content } format
+	 */
+	compile(template: Template | { name: string; content: string }): Template {
+		// Handle simplified format { name, content } used in tests
+		const source = 'content' in template ? template.content : template.source;
+		const normalizedTemplate: Template = 'content' in template
+			? {
+					source: template.content,
+					metadata: {
+						name: template.name,
+						requiredVariables: [],
+						optionalVariables: [],
+					},
+				}
+			: template;
+
+		if (!normalizedTemplate.compiled) {
+			normalizedTemplate.compiled = compile(source, this.options);
+		}
+		return normalizedTemplate;
+	}
+
+	/**
+	 * Render a compiled template with context
+	 * Overload: render(compiled: Template, context: TemplateContext)
+	 * Supports both standard Template format and simplified { name, content } format
+	 */
+	renderCompiled(
+		compiled: Template | { name: string; content: string },
+		context: TemplateContext
+	): string {
+		// Handle simplified format { name, content } used in tests
+		const source = 'content' in compiled ? compiled.content : compiled.source;
+
+		if ('content' in compiled) {
+			// Simplified format - compile on the fly
+			const compiledFn = compile(source, this.options);
+			return compiledFn(context);
+		}
+
+		if (!compiled.compiled) {
+			compiled.compiled = compile(source, this.options);
+		}
+		return compiled.compiled(context);
+	}
 }

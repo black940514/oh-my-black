@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://oh-my-black.dev/schemas/safety-net.schema.json",
+  "title": "Safety Net Configuration",
+  "description": "Configuration schema for oh-my-black Safety Net feature",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["off", "warn", "strict", "paranoid"],
+      "default": "warn",
+      "description": "Safety enforcement mode: off=disabled, warn=warnings only, strict=block dangerous commands, paranoid=block anything suspicious"
+    },
+    "customRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Regex pattern to match against commands"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["allow", "warn", "block"],
+            "description": "Action to take when pattern matches"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Human-readable reason for this rule"
+          }
+        },
+        "required": ["pattern", "action", "reason"],
+        "additionalProperties": false
+      },
+      "default": [],
+      "description": "Custom rules that override or extend default patterns"
+    },
+    "allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Regex patterns for commands that are always allowed"
+    },
+    "blocklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Regex patterns for commands that are always blocked"
+    },
+    "auditLog": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to log all safety events to .omc/logs/safety-audit.jsonl"
+    },
+    "notifyOnBlock": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to broadcast an AMPLIFY message when a command is blocked"
+    },
+    "maxBlocksBeforeEscalate": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 3,
+      "description": "After this many blocks in one session, escalate to human review"
+    }
+  },
+  "required": ["mode"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "mode": "strict",
+      "customRules": [
+        {
+          "pattern": "npm publish",
+          "action": "block",
+          "reason": "Prevent accidental package publishing"
+        }
+      ],
+      "allowlist": ["git push origin main"],
+      "auditLog": true
+    },
+    {
+      "mode": "paranoid",
+      "blocklist": ["curl.*\\|.*sh", "wget.*\\|.*bash"],
+      "notifyOnBlock": true
+    }
+  ]
+}

@@ -60,6 +60,55 @@ When implementing with any external tool (Claude Code hooks, React, database dri
 | Uncertain about field names | Query official documentation |
 | Copying from old code | Verify pattern still valid |
 
+### Wiring Proof (MANDATORY)
+
+**NEVER claim a feature is "implemented" without proving it's actually wired up.**
+
+When asserting that any feature/module is "implemented" or "working", you MUST provide ALL 4 proofs:
+
+| Proof | Description | Example |
+|-------|-------------|---------|
+| **Entry Point** | Where execution starts | hook, command, skill, CLI, API endpoint |
+| **Call Site** | Actual invocation location | `src/hooks/autopilot/state.ts:143` |
+| **Activation** | How user triggers it | keyword, flag, config option |
+| **State/Config** | State file path and key | `.omb/state/autopilot-state.json` → `active` |
+
+**If ANY proof is missing → classify as "UNWIRED (scaffolding only)"**
+
+#### UNWIRED Classification
+
+When a feature lacks wiring proof:
+1. Label it: `⚠️ UNWIRED: [feature name]`
+2. Explain what exists: types, interfaces, utilities
+3. Identify what's missing: import, call site, registration
+4. Propose minimal wiring patch:
+   - Which file needs the import
+   - Which function needs the call
+   - Which config needs the option
+
+#### Example: Proper Wiring Proof
+
+```
+✅ TeamAutoComposer Integration:
+- Entry Point: initAutopilot() in src/hooks/autopilot/state.ts
+- Call Site: state.ts:143 → shouldUseTeamComposition(mergedConfig)
+            state.ts:155 → composeTeamForAutopilot(...)
+- Activation: config.ohmyblack.enabled = true
+- State/Config: .omb/state/autopilot-state.json → teamComposition
+```
+
+#### Example: UNWIRED Detection
+
+```
+⚠️ UNWIRED: WorkflowExecutor
+- EXISTS: src/features/team/executor.ts (class defined)
+- MISSING: No import in any hook/skill
+- PATCH: Add to src/hooks/autopilot/state.ts:
+         import { executeWorkflow } from '../../features/team/executor.js'
+```
+
+**Why this matters**: Architect agent previously verified against plugin cache (old version) and found "missing" features that actually existed in dev directory. This rule prevents false negatives AND false positives.
+
 ### What You Do vs. Delegate
 
 | Action | YOU Do Directly | DELEGATE to Agent |

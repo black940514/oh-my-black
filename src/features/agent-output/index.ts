@@ -80,8 +80,8 @@ export function validateAgentOutput(output: unknown): AgentOutputValidationResul
 
       if (!ev.type) {
         errors.push(`evidence[${index}] missing required field: type`);
-      } else if (!['command_output', 'test_result', 'diagnostics', 'manual_check'].includes(ev.type as string)) {
-        errors.push(`evidence[${index}].type must be one of: command_output, test_result, diagnostics, manual_check`);
+      } else if (!['command_output', 'test_result', 'diagnostics', 'manual_check', 'wiring_proof'].includes(ev.type as string)) {
+        errors.push(`evidence[${index}].type must be one of: command_output, test_result, diagnostics, manual_check, wiring_proof`);
       }
 
       if (!ev.content) {
@@ -94,6 +94,35 @@ export function validateAgentOutput(output: unknown): AgentOutputValidationResul
         errors.push(`evidence[${index}] missing required field: passed`);
       } else if (typeof ev.passed !== 'boolean') {
         errors.push(`evidence[${index}].passed must be a boolean`);
+      }
+
+      // Validate wiring_proof specific fields
+      if (ev.type === 'wiring_proof') {
+        if (!ev.wiringProofs || !Array.isArray(ev.wiringProofs)) {
+          errors.push(`evidence[${index}] of type 'wiring_proof' must include wiringProofs array`);
+        } else if (ev.wiringProofs.length === 0) {
+          errors.push(`evidence[${index}] of type 'wiring_proof' must have at least one proof`);
+        } else {
+          // Validate each wiring proof detail
+          ev.wiringProofs.forEach((proof: any, proofIndex: number) => {
+            if (!proof || typeof proof !== 'object') {
+              errors.push(`evidence[${index}].wiringProofs[${proofIndex}] must be an object`);
+              return;
+            }
+
+            if (!proof.proofType || !['entry_point', 'call_site', 'activation', 'state_config'].includes(proof.proofType)) {
+              errors.push(`evidence[${index}].wiringProofs[${proofIndex}].proofType must be one of: entry_point, call_site, activation, state_config`);
+            }
+
+            if (!proof.location || typeof proof.location !== 'string') {
+              errors.push(`evidence[${index}].wiringProofs[${proofIndex}].location must be a non-empty string`);
+            }
+
+            if (!proof.description || typeof proof.description !== 'string') {
+              errors.push(`evidence[${index}].wiringProofs[${proofIndex}].description must be a non-empty string`);
+            }
+          });
+        }
       }
     });
 

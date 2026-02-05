@@ -18,6 +18,62 @@ import {
 import { join, dirname, resolve, normalize } from "path";
 import { homedir } from "os";
 
+/**
+ * Check if a path is inside a .claude-accounts structure.
+ * Returns the account directory if found, null otherwise.
+ * @param {string} dir - Directory to check
+ * @returns {string|null} - Account directory or null
+ */
+function getAccountDirectory(dir) {
+  const normalized = normalizePath(dir);
+  const accountsMatch = normalized.match(/(.+[\/\\]\.claude-accounts[\/\\][^\/\\]+)/i);
+  if (accountsMatch) {
+    return accountsMatch[1];
+  }
+  return null;
+}
+
+/**
+ * Find the project root by looking for common project markers.
+ * Respects .claude-accounts boundaries to prevent cross-account state leakage.
+ * @param {string} startDir - Directory to start searching from
+ * @returns {string} - Project root or startDir if not found
+ */
+function findProjectRoot(startDir) {
+  const markers = ['.git', 'package.json', 'pyproject.toml', '.claude', 'CLAUDE.md', 'Cargo.toml', 'go.mod'];
+
+  // Check if we're inside a .claude-accounts structure
+  const accountDir = getAccountDirectory(startDir);
+
+  let current = startDir;
+  const sep = process.platform === 'win32' ? '\\' : '/';
+  const root = process.platform === 'win32' ? current.split(sep)[0] + sep : '/';
+
+  while (current !== root) {
+    // Stop at .claude-accounts boundary to prevent cross-account state access
+    if (accountDir && !normalizePath(current).startsWith(accountDir)) {
+      break;
+    }
+
+    // Stop at home directory to prevent going too high
+    const home = homedir();
+    if (normalizePath(current) === normalizePath(home)) {
+      break;
+    }
+
+    for (const marker of markers) {
+      if (existsSync(join(current, marker))) {
+        return current;
+      }
+    }
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  return startDir; // Fallback to original directory
+}
+
 async function readStdin() {
   const chunks = [];
   for await (const chunk of process.stdin) {
@@ -57,12 +113,20 @@ function writeJsonFile(path, data) {
 const STALE_STATE_THRESHOLD_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 /**
- * Check if a state is stale based on its timestamps.
- * A state is considered stale if it hasn't been updated recently.
+ * Check if a state is stale based on its timestamps and session ID.
+ * A state is considered stale if it hasn't been updated recently or belongs to a different session.
  * We check both `last_checked_at` and `started_at` - using whichever is more recent.
+ * @param {object} state - State object to check
+ * @param {string} currentSessionId - Current session ID to compare against
+ * @returns {boolean} - True if state is stale or belongs to different session
  */
-function isStaleState(state) {
+function isStaleState(state, currentSessionId) {
   if (!state) return true;
+
+  // If session_id exists and doesn't match current session, consider stale
+  if (currentSessionId && state.session_id && state.session_id !== currentSessionId) {
+    return true;
+  }
 
   const lastChecked = state.last_checked_at
     ? new Date(state.last_checked_at).getTime()
@@ -92,14 +156,22 @@ function normalizePath(p) {
 
 /**
  * Check if a state belongs to the current project.
+ * Enhanced to handle .claude-accounts boundaries and multiple verification layers.
+ * @param {object} state - State object to check
+ * @param {string} currentDirectory - Current working directory
+ * @param {string} projectRoot - Resolved project root
+ * @param {boolean} isGlobalState - Whether state was read from global location
+ * @returns {boolean} - True if state belongs to current project
  */
 function isStateForCurrentProject(
   state,
   currentDirectory,
+  projectRoot,
   isGlobalState = false,
 ) {
   if (!state) return true;
 
+  // If state has no project_path, only allow if not global
   if (!state.project_path) {
     if (isGlobalState) {
       return false;
@@ -107,7 +179,30 @@ function isStateForCurrentProject(
     return true;
   }
 
-  return normalizePath(state.project_path) === normalizePath(currentDirectory);
+  const stateProjectPath = normalizePath(state.project_path);
+  const normalizedCurrent = normalizePath(currentDirectory);
+  const normalizedRoot = normalizePath(projectRoot);
+
+  // Check exact match with either current directory or project root
+  if (stateProjectPath === normalizedCurrent || stateProjectPath === normalizedRoot) {
+    return true;
+  }
+
+  // Check if state belongs to a different .claude-accounts account
+  const stateAccount = getAccountDirectory(state.project_path);
+  const currentAccount = getAccountDirectory(currentDirectory);
+
+  // If both are in different accounts, definitely not the same project
+  if (stateAccount && currentAccount && stateAccount !== currentAccount) {
+    return false;
+  }
+
+  // If current is in an account but state is not (or vice versa), be cautious
+  if ((stateAccount && !currentAccount) || (!stateAccount && currentAccount)) {
+    return false;
+  }
+
+  return false;
 }
 
 /**
@@ -181,7 +276,7 @@ function countIncompleteTodos(sessionId, projectDir) {
 
   // Project-local todos only
   for (const path of [
-    join(projectDir, ".omc", "todos.json"),
+    join(projectDir, ".omb", "todos.json"),
     join(projectDir, ".claude", "todos.json"),
   ]) {
     try {
@@ -264,6 +359,33 @@ function isUserAbort(data) {
   );
 }
 
+/**
+ * Determine the best directory to use for state file lookup.
+ * Priority: data.directory > data.cwd > CLAUDE_PROJECT_DIR > process.cwd()
+ * @param {object} data - Hook input data
+ * @returns {string} - Resolved directory path
+ */
+function resolveDirectory(data) {
+  // 1. Explicit directory from hook data (highest priority)
+  if (data.directory && existsSync(data.directory)) {
+    return data.directory;
+  }
+
+  // 2. CWD from hook data
+  if (data.cwd && existsSync(data.cwd)) {
+    return data.cwd;
+  }
+
+  // 3. Environment variable (Claude Code may set this)
+  const envDir = process.env.CLAUDE_PROJECT_DIR;
+  if (envDir && existsSync(envDir)) {
+    return envDir;
+  }
+
+  // 4. Fallback to process.cwd()
+  return process.cwd();
+}
+
 async function main() {
   try {
     const input = await readStdin();
@@ -272,9 +394,15 @@ async function main() {
       data = JSON.parse(input);
     } catch {}
 
-    const directory = data.directory || process.cwd();
+    const directory = resolveDirectory(data);
     const sessionId = data.sessionId || data.session_id || "";
-    const stateDir = join(directory, ".omc", "state");
+    const projectRoot = findProjectRoot(directory);
+    const stateDir = join(projectRoot, ".omb", "state");
+
+    // Log for debugging (only in verbose mode)
+    if (process.env.OMB_DEBUG === "1") {
+      console.error(`[persistent-mode] directory=${directory}, projectRoot=${projectRoot}, stateDir=${stateDir}`);
+    }
 
     // CRITICAL: Never block context-limit stops.
     // Blocking these causes a deadlock where Claude Code cannot compact.
@@ -308,9 +436,13 @@ async function main() {
     const todoCount = countIncompleteTodos(sessionId, directory);
     const totalIncomplete = taskCount + todoCount;
 
+    // Helper to check project match for all modes
+    const isForThisProject = (stateObj) =>
+      isStateForCurrentProject(stateObj.state, directory, projectRoot, stateObj.isGlobal);
+
     // Priority 1: Ralph Loop (explicit persistence mode)
     // Skip if state is stale (older than 2 hours) - prevents blocking new sessions
-    if (ralph.state?.active && !isStaleState(ralph.state)) {
+    if (ralph.state?.active && !isStaleState(ralph.state, sessionId) && isForThisProject(ralph)) {
       const iteration = ralph.state.iteration || 1;
       const maxIter = ralph.state.max_iterations || 100;
 
@@ -330,7 +462,7 @@ async function main() {
     }
 
     // Priority 2: Autopilot (high-level orchestration)
-    if (autopilot.state?.active && !isStaleState(autopilot.state)) {
+    if (autopilot.state?.active && !isStaleState(autopilot.state, sessionId) && isForThisProject(autopilot)) {
       const phase = autopilot.state.phase || "unknown";
       if (phase !== "complete") {
         const newCount = (autopilot.state.reinforcement_count || 0) + 1;
@@ -351,7 +483,7 @@ async function main() {
     }
 
     // Priority 3: Ultrapilot (parallel autopilot)
-    if (ultrapilot.state?.active && !isStaleState(ultrapilot.state)) {
+    if (ultrapilot.state?.active && !isStaleState(ultrapilot.state, sessionId) && isForThisProject(ultrapilot)) {
       const workers = ultrapilot.state.workers || [];
       const incomplete = workers.filter(
         (w) => w.status !== "complete" && w.status !== "failed",
@@ -375,7 +507,9 @@ async function main() {
     }
 
     // Priority 4: Swarm (coordinated agents with SQLite)
-    if (swarmMarker && swarmSummary?.active && !isStaleState(swarmSummary)) {
+    // Swarm uses different state structure, create wrapper for project check
+    const swarmStateObj = { state: swarmSummary, isGlobal: false };
+    if (swarmMarker && swarmSummary?.active && !isStaleState(swarmSummary, sessionId) && isForThisProject(swarmStateObj)) {
       const pending =
         (swarmSummary.tasks_pending || 0) + (swarmSummary.tasks_claimed || 0);
       if (pending > 0) {
@@ -397,7 +531,7 @@ async function main() {
     }
 
     // Priority 5: Pipeline (sequential stages)
-    if (pipeline.state?.active && !isStaleState(pipeline.state)) {
+    if (pipeline.state?.active && !isStaleState(pipeline.state, sessionId) && isForThisProject(pipeline)) {
       const currentStage = pipeline.state.current_stage || 0;
       const totalStages = pipeline.state.stages?.length || 0;
       if (currentStage < totalStages) {
@@ -419,7 +553,7 @@ async function main() {
     }
 
     // Priority 6: UltraQA (QA cycling)
-    if (ultraqa.state?.active && !isStaleState(ultraqa.state)) {
+    if (ultraqa.state?.active && !isStaleState(ultraqa.state, sessionId) && isForThisProject(ultraqa)) {
       const cycle = ultraqa.state.cycle || 1;
       const maxCycles = ultraqa.state.max_cycles || 10;
       if (cycle < maxCycles && !ultraqa.state.all_passing) {
@@ -444,10 +578,10 @@ async function main() {
     // Project isolation: only block if state belongs to this project
     if (
       ultrawork.state?.active &&
-      !isStaleState(ultrawork.state) &&
+      !isStaleState(ultrawork.state, sessionId) &&
       (!ultrawork.state.session_id ||
         ultrawork.state.session_id === sessionId) &&
-      isStateForCurrentProject(ultrawork.state, directory, ultrawork.isGlobal)
+      isForThisProject(ultrawork)
     ) {
       const newCount = (ultrawork.state.reinforcement_count || 0) + 1;
       const maxReinforcements = ultrawork.state.max_reinforcements || 50;
@@ -484,7 +618,7 @@ async function main() {
     }
 
     // Priority 8: Ecomode - ALWAYS continue while active
-    if (ecomode.state?.active && !isStaleState(ecomode.state)) {
+    if (ecomode.state?.active && !isStaleState(ecomode.state, sessionId) && isForThisProject(ecomode)) {
       const newCount = (ecomode.state.reinforcement_count || 0) + 1;
       const maxReinforcements = ecomode.state.max_reinforcements || 50;
 

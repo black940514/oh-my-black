@@ -252,7 +252,7 @@ export interface HudElementConfig {
   gitRepo: boolean;          // Show git repository name
   gitBranch: boolean;        // Show git branch
   model: boolean;            // Show current model name
-  omcLabel: boolean;
+  ombLabel: boolean;
   rateLimits: boolean;  // Show 5h and weekly rate limits
   ralph: boolean;
   autopilot: boolean;
@@ -274,6 +274,8 @@ export interface HudElementConfig {
   showCost: boolean;          // Show cost/dollar amounts in analytics displays
   maxOutputLines: number;     // Max total output lines to prevent input field shrinkage
   safeMode: boolean;          // Strip ANSI codes and use ASCII-only output to prevent terminal rendering corruption (Issue #346)
+  readiness: boolean;         // Show Quality Gradient readiness scores
+  skepticStatus: boolean;     // Show Skeptic continuous validation health
 }
 
 export interface HudThresholds {
@@ -302,7 +304,7 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
     gitRepo: false,           // Disabled by default for backward compatibility
     gitBranch: false,         // Disabled by default for backward compatibility
     model: false,             // Disabled by default for backward compatibility
-    omcLabel: true,
+    ombLabel: true,
     rateLimits: true,  // Show rate limits by default
     ralph: true,
     autopilot: true,
@@ -324,6 +326,8 @@ export const DEFAULT_HUD_CONFIG: HudConfig = {
     showCost: true,
     maxOutputLines: 4,
     safeMode: true,  // Enabled by default to prevent terminal rendering corruption (Issue #346)
+    readiness: false,  // Off by default, user opts in
+    skepticStatus: false,  // Off by default, user opts in
   },
   thresholds: {
     contextWarning: 70,
@@ -341,7 +345,7 @@ export const PRESET_CONFIGS: Record<HudPreset, Partial<HudElementConfig>> = {
     gitRepo: false,
     gitBranch: false,
     model: false,
-    omcLabel: true,
+    ombLabel: true,
     rateLimits: true,
     ralph: true,
     autopilot: true,
@@ -370,7 +374,7 @@ export const PRESET_CONFIGS: Record<HudPreset, Partial<HudElementConfig>> = {
     gitRepo: false,
     gitBranch: false,
     model: false,
-    omcLabel: false,
+    ombLabel: false,
     rateLimits: false,
     ralph: false,
     autopilot: false,
@@ -399,7 +403,7 @@ export const PRESET_CONFIGS: Record<HudPreset, Partial<HudElementConfig>> = {
     gitRepo: false,
     gitBranch: false,
     model: false,
-    omcLabel: true,
+    ombLabel: true,
     rateLimits: true,
     ralph: true,
     autopilot: true,
@@ -428,7 +432,7 @@ export const PRESET_CONFIGS: Record<HudPreset, Partial<HudElementConfig>> = {
     gitRepo: false,
     gitBranch: false,
     model: false,
-    omcLabel: true,
+    ombLabel: true,
     rateLimits: true,
     ralph: true,
     autopilot: true,
@@ -457,7 +461,7 @@ export const PRESET_CONFIGS: Record<HudPreset, Partial<HudElementConfig>> = {
     gitRepo: false,
     gitBranch: false,
     model: false,
-    omcLabel: true,
+    ombLabel: true,
     rateLimits: false,
     ralph: true,
     autopilot: true,
@@ -486,7 +490,7 @@ export const PRESET_CONFIGS: Record<HudPreset, Partial<HudElementConfig>> = {
     gitRepo: false,
     gitBranch: false,
     model: false,
-    omcLabel: true,
+    ombLabel: true,
     rateLimits: true,
     ralph: true,
     autopilot: true,
