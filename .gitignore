@@ -9,3 +9,5 @@ dist/
 # Windows reserved names (prevent accidental creation)
 nul
 NUL
+docs/api/
+tsconfig.tsbuildinfo

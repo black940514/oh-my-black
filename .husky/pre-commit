@@ -1,0 +1,2 @@
+npm run sync-metadata:verify
+npm run lint

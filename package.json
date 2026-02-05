@@ -47,7 +47,9 @@
     "sync-metadata": "tsx scripts/sync-metadata.ts",
     "sync-metadata:verify": "tsx scripts/sync-metadata.ts --verify",
     "sync-metadata:dry-run": "tsx scripts/sync-metadata.ts --dry-run",
-    "prepare": "npm run build",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
+    "prepare": "husky",
     "prepublishOnly": "npm run build && npm run compose-docs"
   },
   "dependencies": {
@@ -73,8 +75,11 @@
     "@vitest/ui": "^4.0.17",
     "esbuild": "^0.27.2",
     "eslint": "^9.17.0",
+    "husky": "^9.1.7",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
+    "typedoc": "^0.27.0",
+    "typedoc-plugin-markdown": "^4.4.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.0",
     "vitest": "^4.0.17"

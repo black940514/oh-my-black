@@ -1,0 +1,16 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "name": "oh-my-black API",
+  "readme": "README.md",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "categorizeByGroup": true,
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "skipErrorChecking": true
+}

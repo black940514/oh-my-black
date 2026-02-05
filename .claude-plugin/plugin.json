@@ -1,6 +1,6 @@
 {
   "name": "oh-my-black",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered multi-agent orchestration system with Zero Learning Curve",
   "author": {
     "name": "black940514"
@@ -17,5 +17,6 @@
     "zero-learning-curve"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json"
+  "mcpServers": "./.mcp.json",
+  "hooks": "./hooks/hooks.json"
 }

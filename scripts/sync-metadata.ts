@@ -186,6 +186,16 @@ function getFileSyncConfigs(): FileSync[] {
         },
       ],
     },
+    {
+      path: '.claude-plugin/plugin.json',
+      replacements: [
+        {
+          pattern: /"version":\s*"[^"]+"/,
+          replacement: (m) => `"version": "${m.version}"`,
+          description: 'Plugin version',
+        },
+      ],
+    },
   ];
 }
 
