@@ -384,6 +384,7 @@ omb-analytics     # View usage statistics
 
 ## Documentation
 
+- **[🇰🇷 한국어 가이드](docs/USER-GUIDE-KO.md)** - 한국어 사용자를 위한 완벽 가이드
 - **[Full Reference](docs/REFERENCE.md)** - Complete feature documentation
 - **[Architecture](docs/ARCHITECTURE.md)** - How it works under the hood
 - **[Performance Monitoring](docs/PERFORMANCE-MONITORING.md)** - Agent tracking & optimization
